@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "dialog/ConfigDlg.h"
+#include "dialog/RenderDlg.h"
+#include "dialog/AboutDlg.h"
 
 // CRhinoDlg 对话框
 
@@ -21,11 +24,22 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
-// 实现
-protected:
+private:
 	HICON m_hIcon;
 	CMenu m_NotifyMenu;
 	NOTIFYICONDATA m_NotifyIcon;
+
+	ConfigDlg m_configDlg;
+	RenderDlg m_renderDlg;
+	AboutDlg m_aboutDlg;
+
+	void StartRecord();
+	void PauseRecord();
+	void StopRecord();
+
+
+// 实现
+protected:
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
@@ -42,4 +56,12 @@ public:
 
 	LRESULT OnNotifyMsg(WPARAM wparam, LPARAM lparam);
 	afx_msg void OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2);
+protected:
+	void OnShowMainDlg();
+	void OnShowConfigDlg();
+	void OnShowAboutDlg();
+	void OnShowCameraDlg();
+	void OnStartRecord();
+	void OnPauseRecord();
+	void OnStopRecord();
 };

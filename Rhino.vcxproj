@@ -186,14 +186,13 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Config.h" />
+    <ClInclude Include="dialog\AboutDlg.h" />
     <ClInclude Include="dialog\CapConfigDlg.h" />
     <ClInclude Include="dialog\ConfigDlg.h" />
     <ClInclude Include="dialog\EncConfigDlg.h" />
     <ClInclude Include="dialog\RecConfigDlg.h" />
+    <ClInclude Include="dialog\RenderDlg.h" />
     <ClInclude Include="dialog\SysConfigDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Rhino.h" />
@@ -203,10 +202,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="dialog\AboutDlg.cpp" />
     <ClCompile Include="dialog\CapConfigDlg.cpp" />
     <ClCompile Include="dialog\ConfigDlg.cpp" />
     <ClCompile Include="dialog\EncConfigDlg.cpp" />
     <ClCompile Include="dialog\RecConfigDlg.cpp" />
+    <ClCompile Include="dialog\RenderDlg.cpp" />
     <ClCompile Include="dialog\SysConfigDlg.cpp" />
     <ClCompile Include="Rhino.cpp" />
     <ClCompile Include="RhinoDlg.cpp" />
@@ -221,6 +222,7 @@
     <ResourceCompile Include="Rhino.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="res\Rhino.rc2" />
   </ItemGroup>
   <ItemGroup>

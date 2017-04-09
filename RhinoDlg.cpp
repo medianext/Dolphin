@@ -4,7 +4,6 @@
 
 #include "stdafx.h"
 #include "Rhino.h"
-#include "dialog/ConfigDlg.h"
 #include "RhinoDlg.h"
 #include "afxdialogex.h"
 
@@ -21,6 +20,10 @@
 #define WM_SHOW_MAIN_DLG (WM_USER+1004)
 #define WM_SHOW_CONFIG_DLG (WM_USER+1005)
 #define WM_SHOW_ABOUT_DLG (WM_USER+1006)
+
+
+#define WM_SWITCH_CAMERA (WM_USER+1007)
+#define WM_SWITCH_MIC (WM_USER+1008)
 
 LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam);
 
@@ -51,6 +54,13 @@ BEGIN_MESSAGE_MAP(CRhinoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CRhinoDlg::OnClickBtnStop)
 	ON_MESSAGE(WM_NOTYFICATION_MESSAGE, OnNotifyMsg)
 	ON_WM_HOTKEY()
+	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
+	ON_COMMAND(WM_SHOW_MAIN_DLG, &CRhinoDlg::OnShowMainDlg)
+	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
+	ON_COMMAND(WM_SHOW_ABOUT_DLG, &CRhinoDlg::OnShowAboutDlg)
+	ON_COMMAND(WM_STARTRECORD, &CRhinoDlg::OnStartRecord)
+	ON_COMMAND(WM_PAUSERECORD, &CRhinoDlg::OnPauseRecord)
+	ON_COMMAND(WM_STOPRECORD, &CRhinoDlg::OnStopRecord)
 END_MESSAGE_MAP()
 
 
@@ -64,6 +74,10 @@ BOOL CRhinoDlg::OnInitDialog()
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
+
+	m_configDlg.Create(IDD_CONFIG_DIALOG, this);
+	m_renderDlg.Create(IDD_RENDER_DIALOG, this);
+	m_aboutDlg.Create(IDD_ABOUT_DIALOG, this);
 
 	// TODO: 在此添加额外的初始化代码
 	BOOL ret;
@@ -91,6 +105,13 @@ BOOL CRhinoDlg::OnInitDialog()
 	m_NotifyMenu.AppendMenu(MF_STRING, WM_DESTROY, TEXT("退出"));
 
 	//Register HotKey
+	ret = RegisterHotKey(GetSafeHwnd(), WM_SHOW_MAIN_DLG, MOD_ALT | MOD_NOREPEAT, VK_F1);
+	ret = RegisterHotKey(GetSafeHwnd(), WM_SHOW_CONFIG_DLG, MOD_ALT | MOD_NOREPEAT, VK_F2);
+	ret = RegisterHotKey(GetSafeHwnd(), WM_SHOW_ABOUT_DLG, MOD_ALT | MOD_NOREPEAT, VK_F3);
+
+	ret = RegisterHotKey(GetSafeHwnd(), WM_SWITCH_CAMERA, MOD_ALT | MOD_NOREPEAT, VK_F5);
+	ret = RegisterHotKey(GetSafeHwnd(), WM_SWITCH_MIC, MOD_ALT | MOD_NOREPEAT, VK_F16);
+
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STARTRECORD, MOD_ALT | MOD_NOREPEAT, VK_F9);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_PAUSERECORD, MOD_ALT | MOD_NOREPEAT, VK_F10);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
@@ -151,6 +172,10 @@ void CRhinoDlg::OnDestroy()
 
 	// TODO: 在此处添加消息处理程序代码
 	Shell_NotifyIcon(NIM_DELETE, &m_NotifyIcon);//删除任务栏图标
+
+	m_configDlg.DestroyWindow();
+	m_renderDlg.DestroyWindow();
+	m_aboutDlg.DestroyWindow();
 }
 
 
@@ -165,8 +190,7 @@ void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
 void CRhinoDlg::OnClickBtnConfig()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	ConfigDlg m_configDlg;
-	INT_PTR ret = m_configDlg.DoModal();
+	m_configDlg.ShowWindow(SW_SHOW);
 }
 
 
@@ -193,23 +217,13 @@ LRESULT  CRhinoDlg::OnNotifyMsg(WPARAM wparam, LPARAM lparam)
 	{
 		LPPOINT lpoint = new tagPOINT;
 		::GetCursorPos(lpoint);//得到鼠标位置  
-		//this->SetForegroundWindow();
+		this->SetForegroundWindow();
 
-		HHOOK hook = SetWindowsHookEx(WH_MSGFILTER, NotifyHookProc, NULL, GetCurrentThreadId());
+		//HHOOK hook = SetWindowsHookEx(WH_MSGFILTER, NotifyHookProc, NULL, GetCurrentThreadId());
 		m_NotifyMenu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_VERNEGANIMATION, lpoint->x, lpoint->y, this);
-		UnhookWindowsHookEx(hook);
+		//UnhookWindowsHookEx(hook);
 
 		delete    lpoint;
-	}
-	break;
-	case WM_LBUTTONDBLCLK://双击左键的处理
-	{
-		this->ShowWindow(SW_SHOW);//简单的显示主窗口完事儿
-	}
-	break;
-	case WM_KILLFOCUS:
-	{
-		OutputDebugString(TEXT("Fffffffffffffffffffffff\n"));
 	}
 	break;
 	}
@@ -222,11 +236,49 @@ void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 
 	switch (nHotKeyId)
 	{
+	case WM_SHOW_MAIN_DLG:
+		this->ShowWindow(SW_SHOW);
+		break;
+	case WM_SHOW_CONFIG_DLG: {
+		BOOL visibale = m_configDlg.IsWindowVisible();
+		if (visibale == FALSE)
+		{
+			m_configDlg.ShowWindow(SW_SHOW);
+		}
+	}
+		break;
+	case WM_SHOW_ABOUT_DLG: {
+		BOOL visibale = m_aboutDlg.IsWindowVisible();
+		if (visibale == FALSE)
+		{
+			m_aboutDlg.ShowWindow(SW_SHOW);
+		}
+		else {
+			m_aboutDlg.ShowWindow(SW_HIDE);
+		}
+	}
+		break;
+	case WM_SWITCH_CAMERA:{
+		BOOL visibale = m_renderDlg.IsWindowVisible();
+		if (visibale == FALSE)
+		{
+			m_renderDlg.ShowWindow(SW_SHOW);
+		}
+		else {
+			m_renderDlg.ShowWindow(SW_HIDE);
+		}
+	}
+		break;
+	case WM_SWITCH_MIC:
+		break;
 	case WM_STARTRECORD:
+		StartRecord();
 		break;
 	case WM_PAUSERECORD:
+		PauseRecord();
 		break;
 	case WM_STOPRECORD:
+		StopRecord();
 		break;
 	default:
 		break;
@@ -248,3 +300,61 @@ LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam)
 	}
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
+
+
+void CRhinoDlg::OnShowMainDlg()
+{
+	this->ShowWindow(SW_SHOW);
+}
+
+
+void CRhinoDlg::OnShowConfigDlg()
+{
+	m_configDlg.ShowWindow(SW_SHOW);
+}
+
+
+void CRhinoDlg::OnShowAboutDlg()
+{
+	m_aboutDlg.ShowWindow(SW_SHOW);
+}
+
+
+void CRhinoDlg::OnShowCameraDlg()
+{
+	m_renderDlg.ShowWindow(SW_SHOW);
+}
+
+
+void CRhinoDlg::OnStartRecord()
+{
+	StartRecord();
+}
+
+
+void CRhinoDlg::OnPauseRecord()
+{
+	PauseRecord();
+}
+
+
+void CRhinoDlg::OnStopRecord()
+{
+	StartRecord();
+}
+
+
+void CRhinoDlg::StartRecord()
+{
+}
+
+
+void CRhinoDlg::PauseRecord()
+{
+}
+
+
+void CRhinoDlg::StopRecord()
+{
+}
+
