@@ -25,6 +25,8 @@
 #define WM_SWITCH_CAMERA (WM_USER+1007)
 #define WM_SWITCH_MIC (WM_USER+1008)
 
+#define TIMER_RECORDER 1
+
 LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam);
 
 
@@ -182,6 +184,18 @@ void CRhinoDlg::OnDestroy()
 void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
+    if (nIDEvent == TIMER_RECORDER)
+    {
+        time_t curTime = time(NULL);
+        DWORD time = curTime - m_dwStartTime;
+        DWORD hour = time / 60 / 60;
+        DWORD minute = time / 60 % 60;
+        DWORD second = time % 60;
+        CStatic* pChild = (CStatic*)GetDlgItem(IDC_REC_TIME);
+        CString str;
+        str.Format(TEXT("%02d:%02d:%02d"), hour, minute, second);
+        pChild->SetWindowText(str);
+    }
 
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -197,12 +211,14 @@ void CRhinoDlg::OnClickBtnConfig()
 void CRhinoDlg::OnClickBtnRecord()
 {
 	// TODO: 在此添加控件通知处理程序代码
+    StartRecord();
 }
 
 
 void CRhinoDlg::OnClickBtnStop()
 {
 	// TODO: 在此添加控件通知处理程序代码
+    StopRecord();
 }
 
 
@@ -340,12 +356,14 @@ void CRhinoDlg::OnPauseRecord()
 
 void CRhinoDlg::OnStopRecord()
 {
-	StartRecord();
+    StopRecord();
 }
 
 
 void CRhinoDlg::StartRecord()
 {
+    m_dwStartTime = time(NULL);
+    SetTimer(TIMER_RECORDER, 1000, NULL);
 }
 
 
@@ -356,5 +374,6 @@ void CRhinoDlg::PauseRecord()
 
 void CRhinoDlg::StopRecord()
 {
+    KillTimer(TIMER_RECORDER);
 }
 

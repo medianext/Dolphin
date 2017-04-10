@@ -33,6 +33,8 @@ private:
 	RenderDlg m_renderDlg;
 	AboutDlg m_aboutDlg;
 
+    DWORD m_dwStartTime;
+
 	void StartRecord();
 	void PauseRecord();
 	void StopRecord();
