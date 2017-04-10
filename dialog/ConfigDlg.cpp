@@ -69,7 +69,9 @@ BOOL ConfigDlg::OnInitDialog()
 	m_capConfigDlg.MoveWindow(&rect);
 	m_sysConfigDlg.Create(IDD_CONFIG_SYS_DLG, this);
 	m_sysConfigDlg.InitConfig(m_softConfig);
-	m_sysConfigDlg.MoveWindow(&rect);
+    m_sysConfigDlg.MoveWindow(&rect);
+    m_aboutDlg.Create(IDD_ABOUT_DIALOG, this);
+    m_aboutDlg.MoveWindow(&rect);
 
 	m_encConfigDlg.ShowWindow(SW_SHOW);
 
@@ -119,6 +121,25 @@ void ConfigDlg::LoadConfig()
 }
 
 
+void ConfigDlg::ShowAboutTab()
+{
+    BOOL visibale = this->IsWindowVisible();
+    if (visibale == FALSE)
+    {
+        this->ShowWindow(SW_SHOW);
+    }
+    if (m_mainTab.GetCurSel() != 4)
+    {
+        m_mainTab.SetCurSel(4);
+        NMHDR param;
+        param.hwndFrom = m_mainTab.GetSafeHwnd();
+        param.idFrom = IDC_SET_TAB;
+        param.code = TCN_SELCHANGE;
+        SendMessage(WM_NOTIFY, IDC_SET_TAB, (LPARAM)&param);
+    }
+}
+
+
 void ConfigDlg::OnTabChange(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -132,31 +153,36 @@ void ConfigDlg::OnTabChange(NMHDR *pNMHDR, LRESULT *pResult)
 		m_encConfigDlg.ShowWindow(SW_SHOW);
 		m_recConfigDlg.ShowWindow(SW_HIDE);
 		m_capConfigDlg.ShowWindow(SW_HIDE);
-		m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_aboutDlg.ShowWindow(SW_HIDE);
 		break;
 	case 1:
 		m_encConfigDlg.ShowWindow(SW_HIDE);
 		m_recConfigDlg.ShowWindow(SW_SHOW);
 		m_capConfigDlg.ShowWindow(SW_HIDE);
-		m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_aboutDlg.ShowWindow(SW_HIDE);
 		break;
 	case 2:
 		m_encConfigDlg.ShowWindow(SW_HIDE);
 		m_recConfigDlg.ShowWindow(SW_HIDE);
 		m_capConfigDlg.ShowWindow(SW_SHOW);
-		m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_aboutDlg.ShowWindow(SW_HIDE);
 		break;
 	case 3:
 		m_encConfigDlg.ShowWindow(SW_HIDE);
 		m_recConfigDlg.ShowWindow(SW_HIDE);
 		m_capConfigDlg.ShowWindow(SW_HIDE);
-		m_sysConfigDlg.ShowWindow(SW_SHOW);
+        m_sysConfigDlg.ShowWindow(SW_SHOW);
+        m_aboutDlg.ShowWindow(SW_HIDE);
 		break;
 	case 4:
 		m_encConfigDlg.ShowWindow(SW_HIDE);
 		m_recConfigDlg.ShowWindow(SW_HIDE);
 		m_capConfigDlg.ShowWindow(SW_HIDE);
 		m_sysConfigDlg.ShowWindow(SW_HIDE);
+        m_aboutDlg.ShowWindow(SW_SHOW);
 		break;
 	}
 }

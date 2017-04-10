@@ -6,7 +6,6 @@
 
 #include "dialog/ConfigDlg.h"
 #include "dialog/RenderDlg.h"
-#include "dialog/AboutDlg.h"
 
 // CRhinoDlg ¶Ô»°¿ò
 
@@ -31,7 +30,6 @@ private:
 
 	ConfigDlg m_configDlg;
 	RenderDlg m_renderDlg;
-	AboutDlg m_aboutDlg;
 
     BYTE m_RecordStatus;
 

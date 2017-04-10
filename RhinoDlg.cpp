@@ -84,7 +84,6 @@ BOOL CRhinoDlg::OnInitDialog()
 
 	m_configDlg.Create(IDD_CONFIG_DIALOG, this);
 	m_renderDlg.Create(IDD_RENDER_DIALOG, this);
-	m_aboutDlg.Create(IDD_ABOUT_DIALOG, this);
 
 	BOOL ret;
 
@@ -181,7 +180,6 @@ void CRhinoDlg::OnDestroy()
 
 	m_configDlg.DestroyWindow();
 	m_renderDlg.DestroyWindow();
-	m_aboutDlg.DestroyWindow();
 }
 
 
@@ -259,14 +257,7 @@ void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 	}
 		break;
 	case WM_SHOW_ABOUT_DLG: {
-		BOOL visibale = m_aboutDlg.IsWindowVisible();
-		if (visibale == FALSE)
-		{
-			m_aboutDlg.ShowWindow(SW_SHOW);
-		}
-		else {
-			m_aboutDlg.ShowWindow(SW_HIDE);
-		}
+        m_configDlg.ShowAboutTab();
 	}
 		break;
 	case WM_SWITCH_CAMERA:{
@@ -327,7 +318,7 @@ void CRhinoDlg::OnShowConfigDlg()
 
 void CRhinoDlg::OnShowAboutDlg()
 {
-	m_aboutDlg.ShowWindow(SW_SHOW);
+    m_configDlg.ShowAboutTab();
 }
 
 

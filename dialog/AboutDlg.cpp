@@ -43,24 +43,6 @@ BOOL AboutDlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化
 
-	CenterWindow();
-
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
-}
-
-
-void AboutDlg::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	SendMessage(WM_CLOSE);
-}
-
-
-void AboutDlg::OnRButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	SendMessage(WM_CLOSE);
 }

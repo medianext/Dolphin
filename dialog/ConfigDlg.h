@@ -10,6 +10,7 @@
 #include "CapConfigDlg.h"
 #include "RecConfigDlg.h"
 #include "SysConfigDlg.h"
+#include "AboutDlg.h"
 
 // ConfigDlg ¶Ô»°¿ò
 
@@ -31,7 +32,8 @@ private:
 	EncConfigDlg m_encConfigDlg;
 	CapConfigDlg m_capConfigDlg;
 	RecConfigDlg m_recConfigDlg;
-	SysConfigDlg m_sysConfigDlg;
+    SysConfigDlg m_sysConfigDlg;
+    AboutDlg m_aboutDlg;
 
 	CodecConfig    m_codecConfig;
 	RecordConfig   m_recordConfig;
@@ -46,6 +48,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+    void ShowAboutTab();
+
 	afx_msg void OnSave();
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
