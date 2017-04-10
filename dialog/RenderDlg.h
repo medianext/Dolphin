@@ -17,6 +17,9 @@ public:
 #endif
 
 private:
+	BOOL m_bMoving;
+	CPoint m_StartPos;
+
 	CMenu m_ContextMenu;
 
 protected:
@@ -26,8 +29,10 @@ protected:
 public:
 	afx_msg void OnClose();
 	afx_msg void OnDestroy();
-	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	virtual BOOL OnInitDialog();
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnMouseLeave();
 };
