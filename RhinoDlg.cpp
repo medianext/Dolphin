@@ -36,6 +36,10 @@ LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam);
 
 CRhinoDlg::CRhinoDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_RHINO_DIALOG, pParent)
+    , m_RecordStatus(0)
+    , m_dwStartTime(0)
+    , m_dwPauseTime(0)
+    , m_dwPauseDuration(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -51,9 +55,10 @@ BEGIN_MESSAGE_MAP(CRhinoDlg, CDialogEx)
 	ON_WM_CLOSE()
 	ON_WM_DESTROY()
 	ON_WM_TIMER()
-	ON_BN_CLICKED(IDC_BTN_CONFIG, &CRhinoDlg::OnClickBtnConfig)
-	ON_BN_CLICKED(IDC_BTN_RECORD, &CRhinoDlg::OnClickBtnRecord)
-	ON_BN_CLICKED(IDC_BTN_STOP, &CRhinoDlg::OnClickBtnStop)
+	ON_BN_CLICKED(IDC_BTN_CONFIG, &CRhinoDlg::OnShowConfigDlg)
+    ON_BN_CLICKED(IDC_BTN_RECORD, &CRhinoDlg::OnStartRecord)
+    ON_BN_CLICKED(IDC_BTN_PAUSE, &CRhinoDlg::OnPauseRecord)
+	ON_BN_CLICKED(IDC_BTN_STOP, &CRhinoDlg::OnStopRecord)
 	ON_MESSAGE(WM_NOTYFICATION_MESSAGE, OnNotifyMsg)
 	ON_WM_HOTKEY()
 	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
@@ -81,7 +86,6 @@ BOOL CRhinoDlg::OnInitDialog()
 	m_renderDlg.Create(IDD_RENDER_DIALOG, this);
 	m_aboutDlg.Create(IDD_ABOUT_DIALOG, this);
 
-	// TODO: 在此添加额外的初始化代码
 	BOOL ret;
 
 	//Initialize NotifyIcon
@@ -92,7 +96,7 @@ BOOL CRhinoDlg::OnInitDialog()
 	m_NotifyIcon.uCallbackMessage = WM_USER + 1000;
 	m_NotifyIcon.hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));
 	lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder"));//图标提示为"测试程序"
-	Shell_NotifyIcon(NIM_ADD, &m_NotifyIcon);//向任务栏添加图标
+	ret = Shell_NotifyIcon(NIM_ADD, &m_NotifyIcon);//向任务栏添加图标
 
 	//Initialize NotifyMenu
 	m_NotifyMenu.CreatePopupMenu();
@@ -186,41 +190,32 @@ void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
     if (nIDEvent == TIMER_RECORDER)
     {
-        time_t curTime = time(NULL);
-        DWORD time = curTime - m_dwStartTime;
-        DWORD hour = time / 60 / 60;
-        DWORD minute = time / 60 % 60;
-        DWORD second = time % 60;
         CStatic* pChild = (CStatic*)GetDlgItem(IDC_REC_TIME);
-        CString str;
-        str.Format(TEXT("%02d:%02d:%02d"), hour, minute, second);
-        pChild->SetWindowText(str);
+        if (m_RecordStatus == 2)
+        {
+            time_t curTime = time(NULL);
+            DWORD time = curTime - m_dwStartTime - m_dwPauseDuration;
+            DWORD hour = time / 60 / 60;
+            DWORD minute = time / 60 % 60;
+            DWORD second = time % 60;
+            CString str;
+            str.Format(TEXT("%02d:%02d:%02d"), hour, minute, second);
+            pChild->SetWindowText(str);
+        }else if (m_RecordStatus == 1)
+        {
+            if (pChild->IsWindowVisible())
+            {
+                pChild->ShowWindow(SW_HIDE);
+            }
+            else
+            {
+                pChild->ShowWindow(SW_SHOW);
+            }
+        }
     }
 
 	CDialogEx::OnTimer(nIDEvent);
 }
-
-
-void CRhinoDlg::OnClickBtnConfig()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	m_configDlg.ShowWindow(SW_SHOW);
-}
-
-
-void CRhinoDlg::OnClickBtnRecord()
-{
-	// TODO: 在此添加控件通知处理程序代码
-    StartRecord();
-}
-
-
-void CRhinoDlg::OnClickBtnStop()
-{
-	// TODO: 在此添加控件通知处理程序代码
-    StopRecord();
-}
-
 
 LRESULT  CRhinoDlg::OnNotifyMsg(WPARAM wparam, LPARAM lparam)
 //wParam接收的是图标的ID，而lParam接收的是鼠标的行为     
@@ -362,18 +357,90 @@ void CRhinoDlg::OnStopRecord()
 
 void CRhinoDlg::StartRecord()
 {
-    m_dwStartTime = time(NULL);
-    SetTimer(TIMER_RECORDER, 1000, NULL);
+    if (m_RecordStatus == 2)
+    {
+        return;
+    }
+
+    CWnd* pChild = NULL;
+
+    pChild = GetDlgItem(IDC_BTN_RECORD);
+    pChild->ShowWindow(SW_HIDE);
+    pChild = GetDlgItem(IDC_BTN_PAUSE);
+    pChild->ShowWindow(SW_SHOW);
+    pChild = GetDlgItem(IDC_BTN_STOP);
+    pChild->EnableWindow(TRUE);
+    pChild = GetDlgItem(IDC_REC_TIME);
+    pChild->ShowWindow(SW_SHOW);
+
+    if (m_RecordStatus == 0)
+    {
+        m_dwStartTime = time(NULL);
+        m_dwPauseTime = 0;
+        m_dwPauseDuration = 0;
+        SetTimer(TIMER_RECORDER, 1000, NULL);
+    } 
+    else if(m_RecordStatus == 1)
+    {
+        time_t curTime = time(NULL);
+        m_dwPauseDuration += curTime - m_dwPauseTime;
+        SetTimer(TIMER_RECORDER, 1000, NULL);
+    }
+
+    m_RecordStatus = 2;
+
+    m_NotifyIcon.uFlags = NIF_TIP;
+    lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n正在录像"));//图标提示为"测试程序"
+    Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
 }
 
 
 void CRhinoDlg::PauseRecord()
 {
+    CWnd* pChild = NULL;
+
+    if (m_RecordStatus == 2)
+    {
+        m_RecordStatus = 1;
+        pChild = GetDlgItem(IDC_BTN_RECORD);
+        pChild->ShowWindow(SW_SHOW);
+        pChild = GetDlgItem(IDC_BTN_PAUSE);
+        pChild->ShowWindow(SW_HIDE);
+
+        m_NotifyIcon.uFlags = NIF_TIP;
+        lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n录像暂停"));//图标提示为"测试程序"
+        Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
+
+        m_dwPauseTime = time(NULL);
+        SetTimer(TIMER_RECORDER, 500, NULL);
+    }
 }
 
 
 void CRhinoDlg::StopRecord()
 {
-    KillTimer(TIMER_RECORDER);
+    if (m_RecordStatus!=0)
+    {
+        m_RecordStatus = 0;
+        m_dwPauseDuration = 0;
+
+        KillTimer(TIMER_RECORDER);
+
+        CWnd* pChild = NULL;
+
+        pChild = GetDlgItem(IDC_BTN_RECORD);
+        pChild->ShowWindow(SW_SHOW);
+        pChild = GetDlgItem(IDC_BTN_PAUSE);
+        pChild->ShowWindow(SW_HIDE);
+        pChild = GetDlgItem(IDC_BTN_STOP);
+        pChild->EnableWindow(FALSE);
+        pChild = GetDlgItem(IDC_REC_TIME);
+        pChild->ShowWindow(SW_SHOW);
+        pChild->SetWindowText(TEXT("00:00:00"));
+
+        m_NotifyIcon.uFlags = NIF_TIP;
+        lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder"));//图标提示为"测试程序"
+        Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
+    }
 }
 

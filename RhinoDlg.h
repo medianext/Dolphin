@@ -33,7 +33,11 @@ private:
 	RenderDlg m_renderDlg;
 	AboutDlg m_aboutDlg;
 
+    BYTE m_RecordStatus;
+
     DWORD m_dwStartTime;
+    DWORD m_dwPauseTime;
+    DWORD m_dwPauseDuration;
 
 	void StartRecord();
 	void PauseRecord();
@@ -52,18 +56,15 @@ public:
 	afx_msg void OnClose();
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnClickBtnConfig();
-	afx_msg void OnClickBtnRecord();
-	afx_msg void OnClickBtnStop();
 
 	LRESULT OnNotifyMsg(WPARAM wparam, LPARAM lparam);
 	afx_msg void OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2);
 protected:
-	void OnShowMainDlg();
-	void OnShowConfigDlg();
-	void OnShowAboutDlg();
-	void OnShowCameraDlg();
-	void OnStartRecord();
-	void OnPauseRecord();
-	void OnStopRecord();
+    afx_msg void OnShowMainDlg();
+    afx_msg void OnShowConfigDlg();
+    afx_msg void OnShowAboutDlg();
+    afx_msg void OnShowCameraDlg();
+    afx_msg void OnStartRecord();
+    afx_msg void OnPauseRecord();
+    afx_msg void OnStopRecord();
 };
