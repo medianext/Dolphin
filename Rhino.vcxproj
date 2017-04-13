@@ -75,22 +75,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>include;media;$(IncludePath)</IncludePath>
+    <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>include;media;$(IncludePath)</IncludePath>
+    <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>include;media;$(IncludePath)</IncludePath>
+    <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>include;media;$(IncludePath)</IncludePath>
+    <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -209,6 +209,7 @@
     <ClInclude Include="media\AudioCapture.h" />
     <ClInclude Include="media\Capture.h" />
     <ClInclude Include="media\Codec.h" />
+    <ClInclude Include="media\Direct3D9Render.h" />
     <ClInclude Include="media\MediaFrame.h" />
     <ClInclude Include="media\MediaPacket.h" />
     <ClInclude Include="media\Render.h" />
@@ -233,6 +234,7 @@
     <ClCompile Include="media\AudioCapture.cpp" />
     <ClCompile Include="media\Capture.cpp" />
     <ClCompile Include="media\Codec.cpp" />
+    <ClCompile Include="media\Direct3D9Render.cpp" />
     <ClCompile Include="media\MediaFrame.cpp" />
     <ClCompile Include="media\MediaPacket.cpp" />
     <ClCompile Include="media\Render.cpp" />

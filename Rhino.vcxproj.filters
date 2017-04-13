@@ -93,6 +93,9 @@
     <ClInclude Include="media\VideoCapture.h">
       <Filter>头文件\media</Filter>
     </ClInclude>
+    <ClInclude Include="media\Direct3D9Render.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Rhino.cpp">
@@ -153,6 +156,9 @@
       <Filter>源文件\media</Filter>
     </ClCompile>
     <ClCompile Include="media\VideoCapture.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Direct3D9Render.cpp">
       <Filter>源文件\media</Filter>
     </ClCompile>
   </ItemGroup>
