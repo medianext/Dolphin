@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dxgi1_2.h>
 
 #include "Capture.h"
 
@@ -28,6 +29,8 @@ private:
     CAPTURE_STATUS_E         m_Status = CAPTURE_STATUS_STOP;
 
     CString                  m_CaptureName;
+
+	IDXGIOutputDuplication* m_pScreenDuplication;
 
 public:
     int AddSink(Sink * sink);

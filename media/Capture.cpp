@@ -8,12 +8,17 @@
 #include "Capture.h"
 #include "VideoCapture.h"
 #include "AudioCapture.h"
+#include "ScreenCapture.h"
+#include "SpeakerCapture.h"
 
 static UINT32 m_videoCapCnt;
 static UINT32 m_audioCapCnt;
 static vector<Capture *> videoCaptureList;
 static vector<Capture *> audioCaptureList;
 
+
+static Capture * screenCapture;
+static Capture * speakerCapture;
 
 Capture::~Capture()
 {
@@ -70,6 +75,10 @@ int Capture::Init()
 
     SafeRelease(&pAttributes);
 
+	screenCapture = new ScreenCapture();
+
+	speakerCapture = new SpeakerCapture();
+
     return (int)(m_videoCapCnt + m_audioCapCnt);
 }
 
@@ -96,7 +105,10 @@ int Capture::Uninit()
 		delete capture;
 	}
 
-    return m_audioCapCnt;
+	delete screenCapture;
+	delete speakerCapture;
+
+    return 0;
 }
 
 
@@ -139,6 +151,18 @@ Capture* Capture::GetAudioCature(int index)
 		return audioCaptureList[index];
     }
     return NULL;
+}
+
+
+Capture* Capture::GetScreenCature(int index)
+{
+	return screenCapture;
+}
+
+
+Capture* Capture::GetSpeakerCature(int index)
+{
+	return speakerCapture;
 }
 
 

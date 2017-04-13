@@ -41,7 +41,9 @@ public:
     static int EnumVideoCature(const std::vector<Capture *> *& vCaptureList);
     static int EnumAudioCature(const std::vector<Capture *> *& aCaptureList);
     static Capture* GetVideoCature(int index);
-    static Capture* GetAudioCature(int index);
+	static Capture* GetAudioCature(int index);
+	static Capture* GetScreenCature(int index);
+	static Capture* GetSpeakerCature(int index);
 
 public:
     virtual int AddSink(Sink * sink) = 0;

@@ -121,6 +121,9 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_PAUSERECORD, MOD_ALT | MOD_NOREPEAT, VK_F10);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
 
+	Capture::Init();
+	Capture* capture = Capture::GetScreenCature(0);
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -176,6 +179,8 @@ void CRhinoDlg::OnDestroy()
 	CDialogEx::OnDestroy();
 
 	// TODO: 在此处添加消息处理程序代码
+	Capture::Uninit();
+
 	Shell_NotifyIcon(NIM_DELETE, &m_NotifyIcon);//删除任务栏图标
 
 	m_configDlg.DestroyWindow();
