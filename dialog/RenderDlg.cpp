@@ -14,6 +14,7 @@ IMPLEMENT_DYNAMIC(RenderDlg, CDialogEx)
 
 RenderDlg::RenderDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_RENDER_DIALOG, pParent)
+	, m_bMoving(FALSE)
 {
 
 }
@@ -31,10 +32,12 @@ void RenderDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(RenderDlg, CDialogEx)
 	ON_WM_CLOSE()
 	ON_WM_DESTROY()
-	ON_WM_MBUTTONDOWN()
-	ON_WM_MBUTTONUP()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONUP()
 	ON_COMMAND(WM_CLOSE, &RenderDlg::OnClose)
+	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSELEAVE()
 END_MESSAGE_MAP()
 
 
@@ -73,22 +76,6 @@ void RenderDlg::OnDestroy()
 }
 
 
-void RenderDlg::OnMButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnMButtonUp(nFlags, point);
-}
-
-
-void RenderDlg::OnMButtonDown(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnMButtonDown(nFlags, point);
-}
-
-
 void RenderDlg::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
@@ -98,4 +85,54 @@ void RenderDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	m_ContextMenu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_VERNEGANIMATION, lpoint->x, lpoint->y, this);
 
 	CDialogEx::OnRButtonUp(nFlags, point);
+}
+
+
+void RenderDlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	m_bMoving = FALSE;
+
+	CDialogEx::OnMButtonUp(nFlags, point);
+}
+
+
+void RenderDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	m_bMoving = TRUE;
+	m_StartPos = point;
+
+	CDialogEx::OnMButtonDown(nFlags, point);
+}
+
+
+void RenderDlg::OnMouseLeave()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	m_bMoving = FALSE;
+
+	CDialogEx::OnMouseLeave();
+}
+
+
+void RenderDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (m_bMoving)
+	{
+
+		RECT rect;
+		GetWindowRect(&rect);
+
+		LONG xoffset = point.x - m_StartPos.x;
+		LONG yoffset = point.y - m_StartPos.y;
+		rect.left += xoffset;
+		rect.right += xoffset;
+		rect.top += yoffset;
+		rect.bottom += yoffset;
+		this->MoveWindow(&rect, 0);
+	}
+
+	CDialogEx::OnMouseMove(nFlags, point);
 }
