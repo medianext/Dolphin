@@ -96,6 +96,15 @@
     <ClInclude Include="media\Direct3D9Render.h">
       <Filter>头文件\media</Filter>
     </ClInclude>
+    <ClInclude Include="media\Direct3D11Render.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\ScreenCapture.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\SpeakerCapture.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Rhino.cpp">
@@ -159,6 +168,15 @@
       <Filter>源文件\media</Filter>
     </ClCompile>
     <ClCompile Include="media\Direct3D9Render.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Direct3D11Render.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\ScreenCapture.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\SpeakerCapture.cpp">
       <Filter>源文件\media</Filter>
     </ClCompile>
   </ItemGroup>
