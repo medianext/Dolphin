@@ -35,10 +35,45 @@
 
 
 
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <mferror.h>
+
+#include <d3d9.h>
+
+#include <shlwapi.h>
+
+#include <fstream>
+#include <vector>
+#include <string>
+#include <set>
+#include <queue>
+using namespace std;
+
+template <class T> void SafeRelease(T **ppT)
+{
+    if (*ppT)
+    {
+        (*ppT)->Release();
+        *ppT = NULL;
+    }
+}
+
+#define MAKEINT32(a,b) ((a<<16)|b&0xFFFF)
+
+#define LOWINT32(a) (a&0xFFFF)
+#define HIGHINT32(a) ((a>>16)&0xFFFF)
+
+#define REC_CAPTURE_RAW            0
+#define REC_CODEC_RAW              0
+#define REC_STREAM                 0
 
 
-
-
+#include "Capture.h"
+#include "Render.h"
+#include "Codec.h"
+#include "Rtmpc.h"
 
 
 #ifdef _UNICODE

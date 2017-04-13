@@ -19,6 +19,12 @@
     <Filter Include="头文件\dialog">
       <UniqueIdentifier>{ffeebabe-e211-42b2-89cf-795b9901ca71}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\media">
+      <UniqueIdentifier>{ccb6fca1-3afd-44b7-8648-cb141119bff0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\media">
+      <UniqueIdentifier>{ece1b00e-d8a0-4acf-b9f0-b0381cc3295d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rhino.h">
@@ -60,6 +66,33 @@
     <ClInclude Include="dialog\RenderDlg.h">
       <Filter>头文件\dialog</Filter>
     </ClInclude>
+    <ClInclude Include="media\AudioCapture.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\Capture.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\Codec.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\MediaFrame.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\MediaPacket.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\Render.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\Rtmpc.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\Sink.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\VideoCapture.h">
+      <Filter>头文件\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Rhino.cpp">
@@ -94,6 +127,33 @@
     </ClCompile>
     <ClCompile Include="dialog\RenderDlg.cpp">
       <Filter>源文件\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="media\AudioCapture.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Capture.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Codec.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\MediaFrame.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\MediaPacket.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Render.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\RenderWnd.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\Rtmpc.cpp">
+      <Filter>源文件\media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\VideoCapture.cpp">
+      <Filter>源文件\media</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
