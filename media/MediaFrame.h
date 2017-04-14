@@ -18,7 +18,8 @@ class MediaFrame
 {
 public:
     MediaFrame();
-    MediaFrame(FrameType frameType, GUID subtype, DWORD dataSize);
+	MediaFrame(FrameType frameType, GUID subtype, DWORD dataSize);
+	MediaFrame(BYTE *pData, FrameType type, void* attribute);
     MediaFrame(IMFMediaBuffer*, FrameType type, void* attribute);
     ~MediaFrame();
 

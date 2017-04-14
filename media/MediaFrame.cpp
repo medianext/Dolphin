@@ -27,6 +27,26 @@ MediaFrame::MediaFrame(FrameType frameType, GUID  subtype, DWORD dataSize)
 }
 
 
+MediaFrame::MediaFrame(BYTE *pData, FrameType type, void* attribute)
+{
+	m_FrameType = type;
+	if (m_FrameType == FRAME_TYPE_VIDEO)
+	{
+		VideoCaptureAttribute* pattr = (VideoCaptureAttribute*)attribute;
+		m_subtype = pattr->format;
+		m_width = pattr->width;
+		m_height = pattr->height;
+		m_stride = pattr->stride;
+		m_dataSize = pattr->stride * pattr->height;
+		m_pData = (BYTE*)malloc(m_dataSize);
+		memcpy(m_pData, pData, m_dataSize);
+	}else if (m_FrameType == FRAME_TYPE_AUDIO)
+	{
+		AudioCaptureAttribute* pattr = (AudioCaptureAttribute*)attribute;
+	}
+}
+
+
 MediaFrame::MediaFrame(IMFMediaBuffer* pBuffer, FrameType type, void* attribute) :
 	m_uTimestamp(0)
 {

@@ -122,9 +122,9 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
 
 	Capture::Init();
-	Capture* capture = Capture::GetScreenCature(0);
-
-    capture->Start();
+	srceenCapture = Capture::GetScreenCature(0);
+	codec = new Codec();
+	srceenCapture->AddSink(codec);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -388,8 +388,22 @@ void CRhinoDlg::StartRecord()
     m_RecordStatus = 2;
 
     m_NotifyIcon.uFlags = NIF_TIP;
-    lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n正在录像"));//图标提示为"测试程序"
+    lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n正在录像"));//
     Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
+
+	srceenCapture->Start();
+
+	VideoCaptureAttribute cap_attribute = { 0 };
+	srceenCapture->GetConfig(&cap_attribute);
+
+	VideoCodecAttribute v_attribute = { 0 };
+	v_attribute.width = cap_attribute.width;
+	v_attribute.height = cap_attribute.height;
+	v_attribute.fps = cap_attribute.fps;
+	v_attribute.profile = 0;
+	v_attribute.bitrate = 4000;
+	codec->SetVideoCodecAttribute(&v_attribute);
+	codec->Start();
 }
 
 
@@ -421,6 +435,9 @@ void CRhinoDlg::StopRecord()
     {
         m_RecordStatus = 0;
         m_dwPauseDuration = 0;
+
+		srceenCapture->Stop();
+		codec->Stop();
 
         KillTimer(TIMER_RECORDER);
 

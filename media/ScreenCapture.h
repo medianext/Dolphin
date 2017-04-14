@@ -36,6 +36,7 @@ private:
 
     ID3D11Device * m_pD3d11Device = nullptr;
     ID3D11DeviceContext* m_pD3d11DeviceContext;
+	ID3D11Texture2D* m_pCurrentFrame;
     IDXGIOutputDuplication* m_pScreenDuplication;
 
     static DWORD WINAPI CaptureScreenThread(LPVOID lpParam);

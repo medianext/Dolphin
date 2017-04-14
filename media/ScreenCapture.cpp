@@ -85,6 +85,38 @@ ScreenCapture::ScreenCapture()
 	DXGI_OUTDUPL_DESC desc;
 	m_pScreenDuplication->GetDesc(&desc);
 
+	VideoCaptureAttribute* attribute = new VideoCaptureAttribute();
+	attribute->format = MFVideoFormat_RGB32;
+	attribute->width = desc.ModeDesc.Width;
+	attribute->height = desc.ModeDesc.Height;
+	attribute->stride = desc.ModeDesc.Width * 4;
+	attribute->fps = desc.ModeDesc.RefreshRate.Numerator / desc.ModeDesc.RefreshRate.Denominator;
+	m_AttributeList.push_back(attribute);
+	m_pBestAttribute = attribute;
+
+	m_pCurrentAttribute = new VideoCaptureAttribute();
+	*m_pCurrentAttribute = *attribute;
+
+	D3D11_TEXTURE2D_DESC DeskTexD;
+	RtlZeroMemory(&DeskTexD, sizeof(D3D11_TEXTURE2D_DESC));
+	DeskTexD.Width = desc.ModeDesc.Width;
+	DeskTexD.Height = desc.ModeDesc.Height;
+	DeskTexD.MipLevels = 1;
+	DeskTexD.ArraySize = 1;
+	DeskTexD.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	DeskTexD.SampleDesc.Count = 1;
+	DeskTexD.Usage = D3D11_USAGE_STAGING;
+	DeskTexD.BindFlags = 0;
+	DeskTexD.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+	DeskTexD.MiscFlags = 0;
+
+	hr = m_pD3d11Device->CreateTexture2D(&DeskTexD, nullptr, &m_pCurrentFrame);
+	if (FAILED(hr))
+	{
+	}
+
+
+
 	SafeRelease(&pOutput1);
 	SafeRelease(&pOutput);
 	SafeRelease(&pAdapter);
@@ -94,6 +126,7 @@ ScreenCapture::ScreenCapture()
 
 ScreenCapture::~ScreenCapture()
 {
+	SafeRelease(&m_pCurrentFrame);
     SafeRelease(&m_pScreenDuplication);
     SafeRelease(&m_pD3d11Device);
     SafeRelease(&m_pD3d11DeviceContext);
@@ -142,6 +175,7 @@ int ScreenCapture::SetConfig(void* attribute)
 
 	EnterCriticalSection(&m_critsec);
 
+	*m_pCurrentAttribute = *pattr;
 
 	LeaveCriticalSection(&m_critsec);
 
@@ -210,7 +244,8 @@ int ScreenCapture::Stop()
 DWORD WINAPI ScreenCapture::CaptureScreenThread(LPVOID lpParam)
 {
     ScreenCapture* capture = (ScreenCapture*)lpParam;
-    IDXGIOutputDuplication* desktop = capture->m_pScreenDuplication;
+	IDXGIOutputDuplication* desktop = capture->m_pScreenDuplication;
+	ID3D11DeviceContext* context = capture->m_pD3d11DeviceContext;
 
     HRESULT hr = S_OK;
 
@@ -220,7 +255,12 @@ DWORD WINAPI ScreenCapture::CaptureScreenThread(LPVOID lpParam)
 
     while (!capture->m_QuitCmd)
     {
-        hr = desktop->AcquireNextFrame(100, &frameInfo, &pResource);
+		hr = desktop->AcquireNextFrame(100, &frameInfo, &pResource);
+		if (FAILED(hr))
+		{
+			Sleep(1);
+			continue;
+		}
 
         // QI for IDXGIResource
         hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&pTexture));
@@ -232,12 +272,25 @@ DWORD WINAPI ScreenCapture::CaptureScreenThread(LPVOID lpParam)
         D3D11_TEXTURE2D_DESC textureDesc;
         pTexture->GetDesc(&textureDesc);
 
+		context->CopyResource(capture->m_pCurrentFrame, pTexture);
+		SafeRelease(&pTexture);
+
         D3D11_MAPPED_SUBRESOURCE subRESOURCE;
         ZeroMemory(&subRESOURCE, sizeof(D3D11_MAPPED_SUBRESOURCE));
-        hr = capture->m_pD3d11DeviceContext->Map(pTexture, 0, D3D11_MAP_READ, 0, &subRESOURCE);
+        hr = context->Map(capture->m_pCurrentFrame, 0, D3D11_MAP_READ, 0, &subRESOURCE);
 
-        capture->m_pD3d11DeviceContext->Unmap(pTexture, 0);
+		MediaFrame* frame = new MediaFrame((BYTE*)subRESOURCE.pData, FRAME_TYPE_VIDEO, (void*)capture->m_pCurrentAttribute);
+		frame->m_uTimestamp = GetTickCount();
+
+		context->Unmap(capture->m_pCurrentFrame, 0);
+
         desktop->ReleaseFrame();
+
+		OutputDebugString(TEXT("Get frame...\n"));
+
+		vector<Sink*>::iterator iter = capture->m_Sinks.begin();
+		for (; iter != capture->m_Sinks.end(); ++iter)
+			(*iter)->SendFrame(frame);
 
         Sleep(10);
     }

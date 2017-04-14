@@ -37,6 +37,9 @@ private:
     DWORD m_dwPauseTime;
     DWORD m_dwPauseDuration;
 
+	Codec* codec;
+	Capture *srceenCapture;
+
 	void StartRecord();
 	void PauseRecord();
 	void StopRecord();
