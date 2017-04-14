@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <d3d11.h>
 #include <dxgi1_2.h>
 
 #include "Capture.h"
@@ -30,7 +31,14 @@ private:
 
     CString                  m_CaptureName;
 
-	IDXGIOutputDuplication* m_pScreenDuplication;
+    HANDLE m_pThread = NULL;
+    int m_QuitCmd = 0;
+
+    ID3D11Device * m_pD3d11Device = nullptr;
+    ID3D11DeviceContext* m_pD3d11DeviceContext;
+    IDXGIOutputDuplication* m_pScreenDuplication;
+
+    static DWORD WINAPI CaptureScreenThread(LPVOID lpParam);
 
 public:
     int AddSink(Sink * sink);

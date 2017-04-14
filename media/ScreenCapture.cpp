@@ -12,9 +12,9 @@
 
 ScreenCapture::ScreenCapture()
 {
-	HRESULT hr = S_OK;
+    HRESULT hr = S_OK;
 
-	ID3D11Device * pDevice = nullptr;
+    InitializeCriticalSection(&m_critsec);
 
 	IDXGIDevice * pDxgiDevice = nullptr;
 	IDXGIAdapter * pAdapter = nullptr;
@@ -46,7 +46,7 @@ ScreenCapture::ScreenCapture()
 	for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
 	{
 		hr = D3D11CreateDevice(nullptr, DriverTypes[DriverTypeIndex], nullptr, 0, FeatureLevels, NumFeatureLevels,
-			D3D11_SDK_VERSION, &pDevice, &FeatureLevel, nullptr);
+			D3D11_SDK_VERSION, &m_pD3d11Device, &FeatureLevel, &m_pD3d11DeviceContext);
 		if (SUCCEEDED(hr))
 		{
 			// Device creation succeeded, no need to loop anymore
@@ -57,7 +57,7 @@ ScreenCapture::ScreenCapture()
 	{
 	}
 
-	hr = pDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&pDxgiDevice));
+	hr = m_pD3d11Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&pDxgiDevice));
 	if (FAILED(hr))
 	{
 	}
@@ -77,7 +77,7 @@ ScreenCapture::ScreenCapture()
 	{
 	}
 
-	hr = pOutput1->DuplicateOutput(pDevice, &m_pScreenDuplication);
+	hr = pOutput1->DuplicateOutput(m_pD3d11Device, &m_pScreenDuplication);
 	if (FAILED(hr))
 	{
 	}
@@ -89,13 +89,16 @@ ScreenCapture::ScreenCapture()
 	SafeRelease(&pOutput);
 	SafeRelease(&pAdapter);
 	SafeRelease(&pDxgiDevice);
-	SafeRelease(&pDevice);
 }
 
 
 ScreenCapture::~ScreenCapture()
 {
-	SafeRelease(&m_pScreenDuplication);
+    SafeRelease(&m_pScreenDuplication);
+    SafeRelease(&m_pD3d11Device);
+    SafeRelease(&m_pD3d11DeviceContext);
+
+    DeleteCriticalSection(&m_critsec);
 }
 
 
@@ -179,8 +182,10 @@ int ScreenCapture::Start()
 {
 	EnterCriticalSection(&m_critsec);
 
-	m_Status = CAPTURE_STATUS_START;
+    m_Status = CAPTURE_STATUS_START;
 
+    m_QuitCmd = 0;
+    m_pThread = CreateThread(NULL, 0, CaptureScreenThread, this, 0, NULL);
 	LeaveCriticalSection(&m_critsec);
 
     return 0;
@@ -189,7 +194,10 @@ int ScreenCapture::Start()
 
 int ScreenCapture::Stop()
 {
-	EnterCriticalSection(&m_critsec);
+    EnterCriticalSection(&m_critsec);
+
+    m_QuitCmd = 1;
+    WaitForSingleObject(m_pThread, INFINITE);
 
 	m_Status = CAPTURE_STATUS_STOP;
 
@@ -198,3 +206,41 @@ int ScreenCapture::Stop()
     return 0;
 }
 
+
+DWORD WINAPI ScreenCapture::CaptureScreenThread(LPVOID lpParam)
+{
+    ScreenCapture* capture = (ScreenCapture*)lpParam;
+    IDXGIOutputDuplication* desktop = capture->m_pScreenDuplication;
+
+    HRESULT hr = S_OK;
+
+    DXGI_OUTDUPL_FRAME_INFO frameInfo;
+    IDXGIResource* pResource = nullptr;
+    ID3D11Texture2D* pTexture = nullptr;
+
+    while (!capture->m_QuitCmd)
+    {
+        hr = desktop->AcquireNextFrame(100, &frameInfo, &pResource);
+
+        // QI for IDXGIResource
+        hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&pTexture));
+        SafeRelease(&pResource);
+        if (FAILED(hr))
+        {
+        }
+
+        D3D11_TEXTURE2D_DESC textureDesc;
+        pTexture->GetDesc(&textureDesc);
+
+        D3D11_MAPPED_SUBRESOURCE subRESOURCE;
+        ZeroMemory(&subRESOURCE, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        hr = capture->m_pD3d11DeviceContext->Map(pTexture, 0, D3D11_MAP_READ, 0, &subRESOURCE);
+
+        capture->m_pD3d11DeviceContext->Unmap(pTexture, 0);
+        desktop->ReleaseFrame();
+
+        Sleep(10);
+    }
+
+    return 0;
+}

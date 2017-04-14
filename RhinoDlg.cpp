@@ -124,6 +124,8 @@ BOOL CRhinoDlg::OnInitDialog()
 	Capture::Init();
 	Capture* capture = Capture::GetScreenCature(0);
 
+    capture->Start();
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
