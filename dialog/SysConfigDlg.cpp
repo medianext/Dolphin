@@ -69,8 +69,23 @@ BOOL SysConfigDlg::OnInitDialog()
 
 void SysConfigDlg::InitConfig(SoftwareConfig& soft)
 {
-	m_bCloseCmd = soft.bExitBtn;
-	m_bMinimizeCmd = soft.bMinBtn;
+    if (soft.bExitBtn)
+    {
+        m_bCloseCmd = 0;
+    } 
+    else
+    {
+        m_bCloseCmd = 1;
+    }
+
+    if (soft.bMinBtn)
+    {
+        m_bMinimizeCmd = 0;
+    }
+    else
+    {
+        m_bMinimizeCmd = 1;
+    }
 
 	this->UpdateData(FALSE);
 }
@@ -80,6 +95,16 @@ void SysConfigDlg::GetConfig(SoftwareConfig& soft)
 {
 	this->UpdateData(TRUE);
 
-	soft.bExitBtn = m_bCloseCmd;
-	soft.bMinBtn = m_bMinimizeCmd;
+    switch (m_bCloseCmd)
+    {
+    case 0: soft.bExitBtn = true; break;
+    case 1: soft.bExitBtn = false; break;
+    }
+
+    switch (m_bMinimizeCmd)
+    {
+    case 0: soft.bMinBtn = true; break;
+    case 1: soft.bMinBtn = false; break;
+    }
+
 }

@@ -26,6 +26,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
-	BOOL m_bCloseCmd;
-	BOOL m_bMinimizeCmd;
+	INT m_bCloseCmd;
+    INT m_bMinimizeCmd;
 };

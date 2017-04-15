@@ -126,11 +126,27 @@ ScreenCapture::ScreenCapture()
 
 ScreenCapture::~ScreenCapture()
 {
+    EnterCriticalSection(&m_critsec);
 	SafeRelease(&m_pCurrentFrame);
     SafeRelease(&m_pScreenDuplication);
     SafeRelease(&m_pD3d11Device);
     SafeRelease(&m_pD3d11DeviceContext);
 
+    if (m_pCurrentAttribute)
+    {
+        delete m_pCurrentAttribute;
+        m_pCurrentAttribute = NULL;
+    }
+    LeaveCriticalSection(&m_critsec);
+
+    VideoCaptureAttribute* pattr = NULL;
+    vector<VideoCaptureAttribute*>::iterator it;
+    for (it = m_AttributeList.begin(); it != m_AttributeList.end();)
+    {
+        pattr = *it;
+        it = m_AttributeList.erase(it);
+        delete pattr;
+    }
     DeleteCriticalSection(&m_critsec);
 }
 

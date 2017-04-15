@@ -31,6 +31,7 @@ void ConfigDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(ConfigDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_SAVE, &ConfigDlg::OnSave)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_SET_TAB, &ConfigDlg::OnTabChange)
+    ON_WM_SHOWWINDOW()
 END_MESSAGE_MAP()
 
 
@@ -59,16 +60,12 @@ BOOL ConfigDlg::OnInitDialog()
 	rect.right += 12;
 
 	m_encConfigDlg.Create(IDD_CONFIG_ENC_DLG, this);
-	m_encConfigDlg.InitConfig(m_codecConfig);
 	m_encConfigDlg.MoveWindow(&rect);
-	m_recConfigDlg.Create(IDD_CONFIG_REC_DLG, this);
-	m_recConfigDlg.InitConfig(m_recordConfig);
+    m_recConfigDlg.Create(IDD_CONFIG_REC_DLG, this);
 	m_recConfigDlg.MoveWindow(&rect);
-	m_capConfigDlg.Create(IDD_CONFIG_CAP_DLG, this);
-	m_capConfigDlg.InitConfig(m_captureConfig);
+    m_capConfigDlg.Create(IDD_CONFIG_CAP_DLG, this);
 	m_capConfigDlg.MoveWindow(&rect);
-	m_sysConfigDlg.Create(IDD_CONFIG_SYS_DLG, this);
-	m_sysConfigDlg.InitConfig(m_softConfig);
+    m_sysConfigDlg.Create(IDD_CONFIG_SYS_DLG, this);
     m_sysConfigDlg.MoveWindow(&rect);
     m_aboutDlg.Create(IDD_ABOUT_DIALOG, this);
     m_aboutDlg.MoveWindow(&rect);
@@ -108,16 +105,49 @@ void ConfigDlg::OnSave()
 
 void ConfigDlg::SaveConfig()
 {
-	m_encConfigDlg.GetConfig(m_codecConfig);
-	m_recConfigDlg.GetConfig(m_recordConfig);
-	m_capConfigDlg.GetConfig(m_captureConfig);
-	m_sysConfigDlg.GetConfig(m_softConfig);
+    CodecConfig codecConfig = { 0 };
+    m_pConfig->GetCodecConfig(codecConfig);
+    m_encConfigDlg.GetConfig(codecConfig);
+    m_pConfig->SetCodecConfig(codecConfig);
+    RecordConfig recConfig = { 0 };
+    m_pConfig->GetRecordConfig(recConfig);
+    m_recConfigDlg.GetConfig(recConfig);
+    m_pConfig->SetRecordConfig(recConfig);
+    CaptureConfig capConfig = { 0 };
+    m_pConfig->GetCaptureConfig(capConfig);
+    m_capConfigDlg.GetConfig(capConfig);
+    m_pConfig->SetCaptureConfig(capConfig);
+    SoftwareConfig softConfig = { 0 };
+    m_pConfig->GetSoftwareConfig(softConfig);
+    m_sysConfigDlg.GetConfig(softConfig);
+    m_pConfig->SetSoftwareConfig(softConfig);
+    m_pConfig->Save();
 }
 
 
 void ConfigDlg::LoadConfig()
 {
+    if (m_pConfig)
+    {
+        CodecConfig codecConfig = { 0 };
+        m_pConfig->GetCodecConfig(codecConfig);
+        m_encConfigDlg.InitConfig(codecConfig);
+        RecordConfig recConfig = { 0 };
+        m_pConfig->GetRecordConfig(recConfig);
+        m_recConfigDlg.InitConfig(recConfig);
+        CaptureConfig capConfig = { 0 };
+        m_pConfig->GetCaptureConfig(capConfig);
+        m_capConfigDlg.InitConfig(capConfig);
+        SoftwareConfig softConfig = { 0 };
+        m_pConfig->GetSoftwareConfig(softConfig);
+        m_sysConfigDlg.InitConfig(softConfig);
+    }
+}
 
+
+void ConfigDlg::SetConfig(Config* config)
+{
+    m_pConfig = config;
 }
 
 
@@ -185,4 +215,13 @@ void ConfigDlg::OnTabChange(NMHDR *pNMHDR, LRESULT *pResult)
         m_aboutDlg.ShowWindow(SW_SHOW);
 		break;
 	}
+}
+
+
+void ConfigDlg::OnShowWindow(BOOL bShow, UINT nStatus)
+{
+    CDialogEx::OnShowWindow(bShow, nStatus);
+
+    // TODO: 在此处添加消息处理程序代码
+    LoadConfig();
 }

@@ -35,19 +35,18 @@ private:
     SysConfigDlg m_sysConfigDlg;
     AboutDlg m_aboutDlg;
 
-	CodecConfig    m_codecConfig;
-	RecordConfig   m_recordConfig;
-	CaptureConfig  m_captureConfig;
-	SoftwareConfig m_softConfig;
-
-	void SaveConfig();
-	void LoadConfig();
+    Config* m_pConfig = nullptr;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 
-	DECLARE_MESSAGE_MAP()
+    DECLARE_MESSAGE_MAP()
+
+    void SaveConfig();
+    void LoadConfig();
+
 public:
+    void SetConfig(Config* config);
     void ShowAboutTab();
 
 	afx_msg void OnSave();
@@ -55,4 +54,5 @@ public:
 	virtual void OnOK();
 	virtual void OnCancel();
 	afx_msg void OnTabChange(NMHDR *pNMHDR, LRESULT *pResult);
+    afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 };

@@ -37,8 +37,12 @@ private:
     DWORD m_dwPauseTime;
     DWORD m_dwPauseDuration;
 
-	Codec* codec;
-	Capture *srceenCapture;
+    Config * config = NULL;
+	Codec* codec = NULL;
+    Capture *srceenCapture = NULL;
+    Capture *speakerCapture = NULL;
+    Capture *cameraCapture = NULL;
+    Capture *micCapture = NULL;
 
 	void StartRecord();
 	void PauseRecord();

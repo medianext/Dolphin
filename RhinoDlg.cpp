@@ -61,7 +61,6 @@ BEGIN_MESSAGE_MAP(CRhinoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CRhinoDlg::OnStopRecord)
 	ON_MESSAGE(WM_NOTYFICATION_MESSAGE, OnNotifyMsg)
 	ON_WM_HOTKEY()
-	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
 	ON_COMMAND(WM_SHOW_MAIN_DLG, &CRhinoDlg::OnShowMainDlg)
 	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
 	ON_COMMAND(WM_SHOW_ABOUT_DLG, &CRhinoDlg::OnShowAboutDlg)
@@ -82,7 +81,9 @@ BOOL CRhinoDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
-	m_configDlg.Create(IDD_CONFIG_DIALOG, this);
+    config = new Config(TEXT("config.dat"));
+    m_configDlg.Create(IDD_CONFIG_DIALOG, this);
+    m_configDlg.SetConfig(config);
 	m_renderDlg.Create(IDD_RENDER_DIALOG, this);
 
 	BOOL ret;
@@ -121,8 +122,12 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_PAUSERECORD, MOD_ALT | MOD_NOREPEAT, VK_F10);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
 
-	Capture::Init();
+ 	Capture::Init();
 	srceenCapture = Capture::GetScreenCature(0);
+    speakerCapture = Capture::GetSpeakerCature(0);
+    cameraCapture = Capture::GetVideoCature(0);
+    micCapture = Capture::GetAudioCature(0);
+
 	codec = new Codec();
 	srceenCapture->AddSink(codec);
 
@@ -171,8 +176,22 @@ void CRhinoDlg::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
-	//this->ShowWindow(SW_MINIMIZE);
-	CDialogEx::OnClose();
+    if (!config)
+    {
+        CDialogEx::OnClose();
+        return;
+    }
+
+    SoftwareConfig softwareConfig;
+    config->GetSoftwareConfig(softwareConfig);
+    if (softwareConfig.bExitBtn)
+    {
+        CDialogEx::OnClose();
+    }
+    else
+    {
+        this->ShowWindow(SW_HIDE);
+    }
 }
 
 
@@ -187,6 +206,15 @@ void CRhinoDlg::OnDestroy()
 
 	m_configDlg.DestroyWindow();
 	m_renderDlg.DestroyWindow();
+
+    if (codec)
+    {
+        delete codec;
+    }
+    if (config)
+    {
+        delete config;
+    }
 }
 
 
@@ -393,16 +421,30 @@ void CRhinoDlg::StartRecord()
 
 	srceenCapture->Start();
 
-	VideoCaptureAttribute cap_attribute = { 0 };
-	srceenCapture->GetConfig(&cap_attribute);
+    CodecConfig codecConfig;
+    config->GetCodecConfig(codecConfig);
+
+	VideoCaptureAttribute v_cap_attribute = { 0 };
+	srceenCapture->GetConfig(&v_cap_attribute);
+    AudioCaptureAttribute a_cap_attribute = {0};
+    micCapture->GetConfig(&a_cap_attribute);
 
 	VideoCodecAttribute v_attribute = { 0 };
-	v_attribute.width = cap_attribute.width;
-	v_attribute.height = cap_attribute.height;
-	v_attribute.fps = cap_attribute.fps;
-	v_attribute.profile = 0;
-	v_attribute.bitrate = 4000;
+	v_attribute.width = v_cap_attribute.width;
+	v_attribute.height = v_cap_attribute.height;
+	v_attribute.fps = codecConfig.videoFps;
+	v_attribute.profile = codecConfig.videoProfile;
+	v_attribute.bitrate = codecConfig.videoBitrate;
 	codec->SetVideoCodecAttribute(&v_attribute);
+
+    AudioCodecAttribute a_attribute = { 0 };
+    a_attribute.samplerate = a_cap_attribute.samplerate;
+    a_attribute.channel = a_cap_attribute.channel;
+    a_attribute.bitwide = a_cap_attribute.bitwide;
+    a_attribute.profile = codecConfig.audioProfile;
+    a_attribute.bitrate = codecConfig.audioBitrate;
+    codec->SetAudioCodecAttribute(&a_attribute);
+
 	codec->Start();
 }
 
