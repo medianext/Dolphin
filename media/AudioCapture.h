@@ -53,6 +53,7 @@ private:
 	vector<Sink *>           m_Sinks;
 
 	CAPTURE_STATUS_E         m_Status = CAPTURE_STATUS_STOP;
+	AudioCaptureStatistics   m_statistics;
 
 	CString                  m_CaptureName;
 	CString                  m_CapturePoint;
@@ -73,6 +74,7 @@ public:
 	int GetConfig(void* attribute);
 	CString GetName();
 	CAPTURE_STATUS_E GetStatus();
+	int GetStatistics(void* statistics);
     int Start();
     int Stop();
 

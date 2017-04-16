@@ -64,7 +64,6 @@ template <class T> void SafeRelease(T **ppT)
 #define HIGHINT32(a) ((a>>16)&0xFFFF)
 
 #define REC_CAPTURE_RAW            0
-#define REC_CODEC_RAW              0
 #define REC_STREAM                 0
 
 

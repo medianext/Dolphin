@@ -123,13 +123,13 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
 
  	Capture::Init();
-	srceenCapture = Capture::GetScreenCature(0);
+	screenCapture = Capture::GetScreenCature(0);
     speakerCapture = Capture::GetSpeakerCature(0);
     cameraCapture = Capture::GetVideoCature(0);
     micCapture = Capture::GetAudioCature(0);
 
 	codec = new Codec();
-	srceenCapture->AddSink(codec);
+	screenCapture->AddSink(codec);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -222,7 +222,13 @@ void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
     if (nIDEvent == TIMER_RECORDER)
-    {
+	{
+		CString debugstr;
+		VideoCaptureStatistics statistics;
+		screenCapture->GetStatistics(&statistics);
+		debugstr.Format(TEXT("width:%d, height:%d, fps:%f, total:%d\n"), statistics.width, statistics.height, statistics.fps, statistics.totalCnt);
+		OutputDebugString(debugstr);
+
         CStatic* pChild = (CStatic*)GetDlgItem(IDC_REC_TIME);
         if (m_RecordStatus == 2)
         {
@@ -231,9 +237,9 @@ void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
             DWORD hour = time / 60 / 60;
             DWORD minute = time / 60 % 60;
             DWORD second = time % 60;
-            CString str;
-            str.Format(TEXT("%02d:%02d:%02d"), hour, minute, second);
-            pChild->SetWindowText(str);
+            CString timestr;
+			timestr.Format(TEXT("%02d:%02d:%02d(%1.0f)"), hour, minute, second, statistics.fps);
+            pChild->SetWindowText(timestr);
         }else if (m_RecordStatus == 1)
         {
             if (pChild->IsWindowVisible())
@@ -419,13 +425,16 @@ void CRhinoDlg::StartRecord()
     lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n正在录像"));//
     Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
 
-	srceenCapture->Start();
-
     CodecConfig codecConfig;
     config->GetCodecConfig(codecConfig);
 
 	VideoCaptureAttribute v_cap_attribute = { 0 };
-	srceenCapture->GetConfig(&v_cap_attribute);
+	screenCapture->GetConfig(&v_cap_attribute);
+	v_cap_attribute.fps = codecConfig.videoFps;
+	screenCapture->SetConfig(&v_cap_attribute);
+	screenCapture->Start();
+
+	screenCapture->GetConfig(&v_cap_attribute);
     AudioCaptureAttribute a_cap_attribute = {0};
     micCapture->GetConfig(&a_cap_attribute);
 
@@ -478,7 +487,7 @@ void CRhinoDlg::StopRecord()
         m_RecordStatus = 0;
         m_dwPauseDuration = 0;
 
-		srceenCapture->Stop();
+		screenCapture->Stop();
 		codec->Stop();
 
         KillTimer(TIMER_RECORDER);

@@ -228,6 +228,19 @@ CAPTURE_STATUS_E ScreenCapture::GetStatus()
 }
 
 
+int ScreenCapture::GetStatistics(void* statistics)
+{
+	if (statistics && m_Status == CAPTURE_STATUS_START)
+	{
+		VideoCaptureStatistics* pstatistics = (VideoCaptureStatistics*)statistics;
+		*pstatistics = m_statistics;
+		return 0;
+	}
+
+	return -1;
+}
+
+
 int ScreenCapture::Start()
 {
 	EnterCriticalSection(&m_critsec);
@@ -269,46 +282,82 @@ DWORD WINAPI ScreenCapture::CaptureScreenThread(LPVOID lpParam)
     IDXGIResource* pResource = nullptr;
     ID3D11Texture2D* pTexture = nullptr;
 
+	capture->m_statistics = { 0 };
+	capture->m_statistics.width = capture->m_pCurrentAttribute->width;
+	capture->m_statistics.height = capture->m_pCurrentAttribute->height;
+
+	clock_t start = clock();
+	clock_t finish;
+	int count = 0;
+
+	DWORD t1, t2, offset;
     while (!capture->m_QuitCmd)
-    {
-		hr = desktop->AcquireNextFrame(100, &frameInfo, &pResource);
-		if (FAILED(hr))
+	{
+		t1 = GetTickCount();
+		EnterCriticalSection(&capture->m_critsec);
+
+		hr = desktop->AcquireNextFrame(0, &frameInfo, &pResource);
+		if (hr == DXGI_ERROR_WAIT_TIMEOUT)
 		{
-			Sleep(1);
-			continue;
 		}
+		else if(hr == DXGI_ERROR_ACCESS_LOST)
+		{
+			break;
+		}
+		else if (FAILED(hr))
+		{
+			continue;
+		}else if (SUCCEEDED(hr))
+		{
+			// QI for IDXGIResource
+			hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&pTexture));
+			SafeRelease(&pResource);
+			if (FAILED(hr))
+			{
+			}
 
-        // QI for IDXGIResource
-        hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&pTexture));
-        SafeRelease(&pResource);
-        if (FAILED(hr))
-        {
-        }
+			D3D11_TEXTURE2D_DESC textureDesc;
+			pTexture->GetDesc(&textureDesc);
 
-        D3D11_TEXTURE2D_DESC textureDesc;
-        pTexture->GetDesc(&textureDesc);
-
-		context->CopyResource(capture->m_pCurrentFrame, pTexture);
-		SafeRelease(&pTexture);
+			context->CopyResource(capture->m_pCurrentFrame, pTexture);
+			SafeRelease(&pTexture);
+		}
 
         D3D11_MAPPED_SUBRESOURCE subRESOURCE;
         ZeroMemory(&subRESOURCE, sizeof(D3D11_MAPPED_SUBRESOURCE));
         hr = context->Map(capture->m_pCurrentFrame, 0, D3D11_MAP_READ, 0, &subRESOURCE);
 
 		MediaFrame* frame = new MediaFrame((BYTE*)subRESOURCE.pData, FRAME_TYPE_VIDEO, (void*)capture->m_pCurrentAttribute);
-		frame->m_uTimestamp = GetTickCount();
+		frame->m_uTimestamp = GetTickCount() * 1000;
 
 		context->Unmap(capture->m_pCurrentFrame, 0);
 
         desktop->ReleaseFrame();
 
-		OutputDebugString(TEXT("Get frame...\n"));
-
 		vector<Sink*>::iterator iter = capture->m_Sinks.begin();
 		for (; iter != capture->m_Sinks.end(); ++iter)
 			(*iter)->SendFrame(frame);
 
-        Sleep(10);
+		delete frame;
+
+		capture->m_statistics.totalCnt++;
+		count++;
+		finish = clock();
+		if (finish - start >= CLOCKS_PER_SEC)
+		{
+			capture->m_statistics.fps = (count) * CLOCKS_PER_SEC / (finish - start);
+			start = finish;
+			count = 0;
+		}
+
+		LeaveCriticalSection(&capture->m_critsec);
+		t2 = GetTickCount();
+		offset = t2 - t1;
+		DWORD duration = 1000 / capture->m_pCurrentAttribute->fps;
+		if (duration>offset)
+		{
+			Sleep(duration - offset);
+		}
     }
 
     return 0;

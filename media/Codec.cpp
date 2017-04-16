@@ -8,16 +8,18 @@
 #include "Codec.h"
 
 
+#define REC_CODEC_RAW              0
+#define REC_CODEC_STREAM           1
+
+
+#define COLOR_CONVERT_USE_TABLE    1
+
+
 //-------------------------------------------------------------------
 //
 // Video Conversion functions
 //
 //-------------------------------------------------------------------
-
-__forceinline BYTE Clip(int clr)
-{
-    return (BYTE)(clr < 0 ? 0 : (clr > 255 ? 255 : clr));
-}
 
 typedef struct tagYUVQUAD {
 	BYTE    y;
@@ -25,20 +27,50 @@ typedef struct tagYUVQUAD {
 	BYTE    v;
 } YUVQUAD;
 
-__forceinline YUVQUAD ConvertRGBToYCrCb(
-	int r,
-	int g,
-	int b
-	)
+__forceinline BYTE Clip(int clr)
+{
+    return (BYTE)(clr < 0 ? 0 : (clr > 255 ? 255 : clr));
+}
+
+__forceinline YUVQUAD ConvertRGBToYCrCb(int r, int g, int b)
 {
 	YUVQUAD yuv;
-
+#if 1
 	yuv.y = Clip(((66 * r + 129 * g + 25 * b + 128) >> 8) + 16);
-	yuv.u = Clip(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128);
-	yuv.v = Clip(((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128);
-
+	yuv.u = Clip(((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128);
+	yuv.v = Clip(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128);
+#else
+	yuv.y = Clip((int)((0.257 * r) + (0.504 * g) + (0.098 * b) + 16));
+	yuv.u = Clip((int)(-(0.148 * r) - (0.291 * g) + (0.439 * b) + 128));
+	yuv.v = Clip((int)((0.439 * r) - (0.368 * g) - (0.071 * b) + 128));
+#endif
 	return yuv;
 }
+
+
+//-------------------------------------------------------------------
+// RGBtoYUVTable
+//-------------------------------------------------------------------
+
+#if COLOR_CONVERT_USE_TABLE
+YUVQUAD RGBtoYUVTable[256][256][256] = { 0 };
+
+void InitRGBtoYUVTable()
+{
+	for (uint16_t r = 0; r < 256; r++)
+	{
+		for (uint16_t g = 0; g < 256; g++)
+		{
+			for (uint16_t b = 0; b < 256; b++)
+			{
+				RGBtoYUVTable[r][g][b] = ConvertRGBToYCrCb(r, g, b);
+			}
+		}
+	}
+}
+#else
+void InitRGBtoYUVTable(){}
+#endif
 
 
 //-------------------------------------------------------------------
@@ -67,17 +99,27 @@ static void TransformImage_RGB24(
 		const BYTE* lpRGBSel = lpRGB;
 		for (UINT y = 0; y < dwWidthInPixels; y++)
 		{
-			int red = *(lpRGBSel++);
-			int green = *(lpRGBSel++);
 			int blue = *(lpRGBSel++);
+			int green = *(lpRGBSel++);
+			int red = *(lpRGBSel++);
 
+#if COLOR_CONVERT_USE_TABLE
+			YUVQUAD* yuv = &RGBtoYUVTable[red][green][blue];
+			*(lpDstBitsY++) = yuv->y;
+			if (x % 2 == 0 && y % 2 == 0)
+			{
+				*(lpDstBitsCb++) = yuv->u;
+				*(lpDstBitsCr++) = yuv->v;
+			}
+#else
 			YUVQUAD yuv = ConvertRGBToYCrCb(red, green, blue);
 			*(lpDstBitsY++) = yuv.y;
-			if (x%2==0 && y%2==0)
+			if (x % 2 == 0 && y % 2 == 0)
 			{
 				*(lpDstBitsCb++) = yuv.u;
 				*(lpDstBitsCr++) = yuv.v;
 			}
+#endif
 		}
 
 		lpRGB += lSrcStride;
@@ -110,10 +152,20 @@ static void TransformImage_RGB32(
 		const BYTE* lpRGBSel = lpRGB;
 		for (UINT y = 0; y < dwWidthInPixels; y++)
 		{
-			int red = *(lpRGBSel++);
-			int green = *(lpRGBSel++);
-			int blue = *(lpRGBSel++);
+			BYTE blue = *(lpRGBSel++);
+			BYTE green = *(lpRGBSel++);
+			BYTE red = *(lpRGBSel++);
+			lpRGBSel++;
 
+#if COLOR_CONVERT_USE_TABLE
+			YUVQUAD* yuv = &RGBtoYUVTable[red][green][blue];
+			*(lpDstBitsY++) = yuv->y;
+			if (x % 2 == 0 && y % 2 == 0)
+			{
+				*(lpDstBitsCb++) = yuv->u;
+				*(lpDstBitsCr++) = yuv->v;
+			}
+#else
 			YUVQUAD yuv = ConvertRGBToYCrCb(red, green, blue);
 			*(lpDstBitsY++) = yuv.y;
 			if (x % 2 == 0 && y % 2 == 0)
@@ -121,6 +173,7 @@ static void TransformImage_RGB32(
 				*(lpDstBitsCb++) = yuv.u;
 				*(lpDstBitsCr++) = yuv.v;
 			}
+#endif
 		}
 
 		lpRGB += lSrcStride;
@@ -307,6 +360,7 @@ Codec::Codec() :
 	InitializeCriticalSection(&m_vpMtx);
 	InitializeCriticalSection(&m_afMtx);
 	InitializeCriticalSection(&m_apMtx);
+	InitRGBtoYUVTable();
 }
 
 
@@ -665,6 +719,15 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 	clock_t finish;
 	int preVideoCnt = 0;
 
+#if REC_CODEC_RAW
+	ofstream yuvfile;
+	yuvfile.open("codec.yuv", ios::out | ios::binary);
+#endif
+#if REC_CODEC_STREAM
+	ofstream h264file;
+	h264file.open("codec.h264", ios::out | ios::binary);
+#endif
+
 	while (1)
 	{
 		if (codec->m_QuitCmd==1)
@@ -680,9 +743,9 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
         }
 
 #if REC_CODEC_RAW
-        if (codec->m_yuvfile.is_open())
+        if (yuvfile.is_open())
         {
-            codec->m_yuvfile.write((char*)pic->img.plane[0], codec->m_videoAttribute.width * codec->m_videoAttribute.height * 3 / 2);
+			yuvfile.write((char*)pic->img.plane[0], codec->m_videoAttribute.width * codec->m_videoAttribute.height * 3 / 2);
         }
 #endif
 
@@ -720,12 +783,35 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 				start = finish;
 			}
 
-            codec->PushVideoPacket(packet);
+#if REC_CODEC_STREAM
+			if (h264file.is_open())
+			{
+				h264file.write((char *)packet->m_pData, packet->m_dataSize);
+			}
+#endif
+
+            //codec->PushVideoPacket(packet);
+			delete packet;
 		}
 
 		x264_picture_clean(pic);
 		delete pic;
 	}
+
+#if REC_CODEC_STREAM
+	if (h264file.is_open())
+	{
+		h264file.flush();
+		h264file.close();
+	}
+#endif
+#if REC_CODEC_RAW
+	if (yuvfile.is_open())
+	{
+		yuvfile.flush();
+		yuvfile.close();
+	}
+#endif
 
 	return 0;
 }
@@ -777,6 +863,11 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
 
     unsigned long long timestamp = 0;
 
+#if REC_CODEC_RAW
+	ofstream pcmfile;
+	pcmfile.open("codec.pcm", ios::out | ios::binary);
+#endif
+
     while (1)
     {
         if (codec->m_QuitCmd == 1)
@@ -792,9 +883,9 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
         }
 
 #if REC_CODEC_RAW
-        if (codec->m_pcmfile.is_open())
+        if (pcmfile.is_open())
         {
-            codec->m_pcmfile.write((char*)frame->m_pData, frame->m_dataSize);
+			pcmfile.write((char*)frame->m_pData, frame->m_dataSize);
         }
 #endif
 
@@ -843,12 +934,21 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 memcpy(packet->m_pData, outbuf.bufs[0], size);
                 packet->m_uTimestamp = timestamp / 1000;
 
-                codec->PushAudioPacket(packet);
+                //codec->PushAudioPacket(packet);
+				delete packet;
             }
         }
 
         delete frame;
-    }
+	}
+
+#if REC_CODEC_RAW
+	if (pcmfile.is_open())
+	{
+		pcmfile.flush();
+		pcmfile.close();
+	}
+#endif
 
     free(pinbuf);
     free(poutbuf);
@@ -1001,8 +1101,6 @@ int Codec::SetAudioCodecAttribute(AudioCodecAttribute* attribute)
     if (attribute != NULL)
     {
 		m_audioAttribute = *attribute;
-		m_audioAttribute.channel = m_audioSrcAttribute.channel;
-		m_audioAttribute.samplerate = m_audioSrcAttribute.samplerate;
         m_audioAttribute.bitwide = 16;
     }
 	return 0;
@@ -1021,12 +1119,6 @@ int Codec::GetAudioCodecAttribute(const AudioCodecAttribute** attribute)
 
 int Codec::Start()
 {
-
-#if REC_CODEC_RAW
-    m_pcmfile.open("codec.pcm", ios::out | ios::binary);
-    m_yuvfile.open("codec.yuv", ios::out | ios::binary);
-#endif
-
 	InitCodec();
 	m_QuitCmd = 0;
     m_videoThread = CreateThread(NULL, 0, VideoEncodecThread, this, 0, NULL);
@@ -1044,25 +1136,11 @@ int Codec::Pause()
 
 int Codec::Stop()
 {
-
     m_Status = CODEC_STATUS_STOP;
 	m_QuitCmd = 1;
     WaitForSingleObject(m_videoThread, INFINITE);
     WaitForSingleObject(m_audioThread, INFINITE);
 	UninitCodec();
-
-#if REC_CODEC_RAW
-    if (m_pcmfile.is_open())
-    {
-        m_pcmfile.flush();
-        m_pcmfile.close();
-    }
-    if (m_yuvfile.is_open())
-    {
-        m_yuvfile.flush();
-        m_yuvfile.close();
-    }
-#endif
 
 	return 0;
 }

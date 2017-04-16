@@ -25,7 +25,8 @@ private:
     VideoCaptureAttribute*    m_pCurrentAttribute = NULL;
     vector<Sink *>           m_Sinks;
 
-    CAPTURE_STATUS_E         m_Status = CAPTURE_STATUS_STOP;
+	CAPTURE_STATUS_E         m_Status = CAPTURE_STATUS_STOP;
+	AudioCaptureStatistics   m_statistics;
 
     CString                  m_CaptureName;
 
@@ -35,7 +36,8 @@ public:
     int SetConfig(void* attribute);
     int GetConfig(void* attribute);
     CString GetName();
-    CAPTURE_STATUS_E GetStatus();
+	CAPTURE_STATUS_E GetStatus();
+	int GetStatistics(void* statistics);
     int Start();
     int Stop();
 };

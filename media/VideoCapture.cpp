@@ -429,6 +429,18 @@ CAPTURE_STATUS_E VideoCapture::GetStatus()
 }
 
 
+int VideoCapture::GetStatistics(void* statistics)
+{
+	if (statistics && m_Status == CAPTURE_STATUS_START)
+	{
+		VideoCaptureStatistics* pstatistics = (VideoCaptureStatistics*)statistics;
+		*pstatistics = m_statistics;
+		return 0;
+	}
+	return -1;
+}
+
+
 int VideoCapture::Start()
 {
 	EnterCriticalSection(&m_critsec);

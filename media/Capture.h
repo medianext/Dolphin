@@ -23,6 +23,21 @@ struct AudioCaptureAttribute {
     int bitwide;
 };
 
+
+struct VideoCaptureStatistics {
+	uint32_t width;
+	uint32_t height;
+	float fps;
+	uint32_t totalCnt;
+};
+
+
+struct AudioCaptureStatistics {
+	int channel;
+	int samplerate;
+	int bitwide;
+};
+
 enum CAPTURE_STATUS_E
 {
 	CAPTURE_STATUS_STOP = 0,
@@ -52,6 +67,7 @@ public:
 	virtual int GetConfig(void* attribute) = 0;
 	virtual CString GetName() = 0;
 	virtual CAPTURE_STATUS_E GetStatus() = 0;
+	virtual int GetStatistics(void* statistics) = 0;
     virtual int Start() = 0;
     virtual int Stop() = 0;
 };

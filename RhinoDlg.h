@@ -39,7 +39,7 @@ private:
 
     Config * config = NULL;
 	Codec* codec = NULL;
-    Capture *srceenCapture = NULL;
+    Capture *screenCapture = NULL;
     Capture *speakerCapture = NULL;
     Capture *cameraCapture = NULL;
     Capture *micCapture = NULL;

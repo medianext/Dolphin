@@ -151,10 +151,6 @@ private:
 	uint32_t m_videoLostCnt    = 0;
 	uint32_t m_videoDecCnt     = 0;
 	double   m_videoDecFps     = 0;
-
-#if REC_CODEC_RAW
-    ofstream      m_pcmfile;
-    ofstream      m_yuvfile;
-#endif
 };
 
+void InitRGBtoYUVTable();

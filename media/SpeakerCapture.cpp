@@ -94,6 +94,18 @@ CAPTURE_STATUS_E SpeakerCapture::GetStatus()
 }
 
 
+int SpeakerCapture::GetStatistics(void* statistics)
+{
+	if (statistics && m_Status == CAPTURE_STATUS_START)
+	{
+		AudioCaptureStatistics* pstatistics = (AudioCaptureStatistics*)statistics;
+		*pstatistics = m_statistics;
+		return 0;
+	}
+	return -1;
+}
+
+
 int SpeakerCapture::Start()
 {
 	EnterCriticalSection(&m_critsec);
