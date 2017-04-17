@@ -9,6 +9,9 @@
 #include <d3d11.h>
 #include "ScreenCapture.h"
 
+#define UPPERDIV(dividend, divisor) (dividend%divisor==0?dividend:((dividend/divisor+1)*divisor))
+#define LOWERDIV(dividend, divisor) (dividend%divisor==0?dividend:((dividend/divisor)*divisor))
+
 
 ScreenCapture::ScreenCapture()
 {
@@ -89,7 +92,7 @@ ScreenCapture::ScreenCapture()
 	attribute->format = MFVideoFormat_RGB32;
 	attribute->width = desc.ModeDesc.Width;
 	attribute->height = desc.ModeDesc.Height;
-	attribute->stride = desc.ModeDesc.Width * 4;
+	attribute->stride = UPPERDIV(desc.ModeDesc.Width, 8) * 4;
 	attribute->fps = desc.ModeDesc.RefreshRate.Numerator / desc.ModeDesc.RefreshRate.Denominator;
 	m_AttributeList.push_back(attribute);
 	m_pBestAttribute = attribute;

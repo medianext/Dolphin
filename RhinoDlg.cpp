@@ -433,6 +433,8 @@ void CRhinoDlg::StartRecord()
 	v_cap_attribute.fps = codecConfig.videoFps;
 	screenCapture->SetConfig(&v_cap_attribute);
 	screenCapture->Start();
+    
+    speakerCapture->Start();
 
 	screenCapture->GetConfig(&v_cap_attribute);
     AudioCaptureAttribute a_cap_attribute = {0};
@@ -487,6 +489,7 @@ void CRhinoDlg::StopRecord()
         m_RecordStatus = 0;
         m_dwPauseDuration = 0;
 
+        speakerCapture->Stop();
 		screenCapture->Stop();
 		codec->Stop();
 

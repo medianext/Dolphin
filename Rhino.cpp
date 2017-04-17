@@ -49,6 +49,8 @@ BOOL CRhinoApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
+    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
 	CWinApp::InitInstance();
 
 
@@ -93,7 +95,9 @@ BOOL CRhinoApp::InitInstance()
 	if (pShellManager != NULL)
 	{
 		delete pShellManager;
-	}
+    }
+
+    CoUninitialize();
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
