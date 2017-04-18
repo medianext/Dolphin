@@ -408,26 +408,23 @@ int AudioCapture::GetStatistics(void* statistics)
 
 int AudioCapture::Start()
 {
-	if (m_Status== CAPTURE_STATUS_START)
-	{
-		return 0;
-	}
-
 	EnterCriticalSection(&m_critsec);
 
-#if REC_CAPTURE_RAW
-	if (m_file.is_open())
+	if (m_Status != CAPTURE_STATUS_START)
 	{
-		m_file.close();
-	}
-    m_file.open("capture.pcm", ios::out | ios::binary);
+#if REC_CAPTURE_RAW
+		if (m_file.is_open())
+		{
+			m_file.close();
+		}
+		m_file.open("capture.pcm", ios::out | ios::binary);
 #endif
+		this->CreateSourceReader();
 
-	this->CreateSourceReader();
+		m_pReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, NULL, NULL, NULL, NULL);
 
-	m_pReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, NULL, NULL, NULL, NULL);
-
-	m_Status = CAPTURE_STATUS_START;
+		m_Status = CAPTURE_STATUS_START;
+	}
 
 	LeaveCriticalSection(&m_critsec);
 
@@ -448,6 +445,8 @@ int AudioCapture::Stop()
 #endif
 
 	m_pReader->Flush(MF_SOURCE_READER_FIRST_AUDIO_STREAM);
+
+	SafeRelease(&m_pReader);
 
 	m_Status = CAPTURE_STATUS_STOP;
 

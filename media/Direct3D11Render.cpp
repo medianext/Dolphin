@@ -126,11 +126,6 @@ int Direct3D11Render::SetSourceAttribute(void* attribute, AttributeType type)
     }
     m_subtype = attr->format;
 
-    //
-    RECT rcSrc = { 0, 0, attr->width, attr->height };
-    //rcSrc = CorrectAspectRatio(rcSrc, m_PixelAR);
-    m_rcDest = LetterBoxRect(rcSrc, m_rcCanvas);
-
     DXGI_SWAP_CHAIN_DESC swapchainDesc = { 0 };
     hr = m_pSwapChain->GetDesc(&swapchainDesc);
     hr = m_pSwapChain->ResizeBuffers(
@@ -139,7 +134,30 @@ int Direct3D11Render::SetSourceAttribute(void* attribute, AttributeType type)
         attr->height,
         swapchainDesc.BufferDesc.Format,
         swapchainDesc.Flags
-        );
+		);
+
+	SafeRelease(&m_pTexture);
+
+	D3D11_TEXTURE2D_DESC DeskTexD;
+	RtlZeroMemory(&DeskTexD, sizeof(D3D11_TEXTURE2D_DESC));
+	DeskTexD.Width = attr->width;
+	DeskTexD.Height = attr->height;
+	DeskTexD.MipLevels = 1;
+	DeskTexD.ArraySize = 1;
+	DeskTexD.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	DeskTexD.SampleDesc.Count = 1;
+	DeskTexD.Usage = D3D11_USAGE_STAGING;
+	DeskTexD.BindFlags = 0;
+	DeskTexD.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+	DeskTexD.MiscFlags = 0;
+
+	hr = m_pD3d11Device->CreateTexture2D(&DeskTexD, nullptr, &m_pTexture);
+	if (FAILED(hr))
+	{
+	}
+
+	m_rcSrc = { 0, 0, attr->width, attr->height };
+	SendMessage(m_hWnd, WM_SET_RENDER_SIZE, 0, (LPARAM)&m_rcSrc);
 
     return 0;
 }
@@ -155,7 +173,7 @@ int Direct3D11Render::SendFrame(MediaFrame * frame)
 int Direct3D11Render::DrawFrame(MediaFrame * frame)
 {
 
-    if (m_pD3d11Device == NULL || m_pSwapChain == NULL || frame == NULL)
+    if (m_pD3d11Device == NULL || m_pSwapChain == NULL || m_pTexture == NULL || frame == NULL)
     {
         return S_OK;
     }
@@ -165,18 +183,15 @@ int Direct3D11Render::DrawFrame(MediaFrame * frame)
     ID3D11Texture2D* pTexture = nullptr;
     IDXGISurface* pSurface = nullptr;
     DXGI_MAPPED_RECT surfaceRect = { 0 };
-    DXGI_SURFACE_DESC surfaceDesc = { 0 };
-    D3D11_TEXTURE2D_DESC textureDesc = { 0 };
+	D3D11_TEXTURE2D_DESC textureeDesc = {0};
 
     hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pTexture);
 
-    pTexture->GetDesc(&textureDesc);
+	pTexture->GetDesc(&textureeDesc);
 
-    hr = pTexture->QueryInterface(__uuidof(IDXGISurface), (void**)&pSurface);
+	hr = m_pTexture->QueryInterface(__uuidof(IDXGISurface), (void**)&pSurface);
 
-    hr = pSurface->GetDesc(&surfaceDesc);
-
-    hr = pSurface->Map(&surfaceRect, DXGI_MAP_READ);
+    hr = pSurface->Map(&surfaceRect, DXGI_MAP_WRITE);
 
     m_convertFn(
         (BYTE*)surfaceRect.pBits,
@@ -188,6 +203,8 @@ int Direct3D11Render::DrawFrame(MediaFrame * frame)
         );
 
     hr = pSurface->Unmap();
+
+	m_pD3d11DeviceContext->CopyResource(pTexture, m_pTexture);
 
     SafeRelease(&pSurface);
     SafeRelease(&pTexture);

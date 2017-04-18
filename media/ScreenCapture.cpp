@@ -115,8 +115,6 @@ ScreenCapture::ScreenCapture()
 	{
 	}
 
-
-
 	SafeRelease(&pOutput1);
 	SafeRelease(&pOutput);
 	SafeRelease(&pAdapter);

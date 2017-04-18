@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 #include "../Rhino.h"
-#include "RenderDlg.h"
 #include "afxdialogex.h"
 #include "RenderDlg.h"
 
@@ -38,6 +37,7 @@ BEGIN_MESSAGE_MAP(RenderDlg, CDialogEx)
 	ON_COMMAND(WM_CLOSE, &RenderDlg::OnClose)
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSELEAVE()
+	ON_MESSAGE(WM_SET_RENDER_SIZE, &RenderDlg::OnSetRenderSize)
 END_MESSAGE_MAP()
 
 
@@ -135,4 +135,17 @@ void RenderDlg::OnMouseMove(UINT nFlags, CPoint point)
 	}
 
 	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+afx_msg LRESULT RenderDlg::OnSetRenderSize(WPARAM wParam, LPARAM lParam)
+{
+	RECT* prcSrc = (RECT*)lParam;
+	RECT rcWin;
+	GetWindowRect(&rcWin);
+	rcWin = LetterBoxRect(*prcSrc, rcWin);
+	//MoveWindow(rcWin.left, rcWin.top, rcWin.right - rcWin.left, rcWin.bottom - rcWin.top, FALSE);
+	MoveWindow(&rcWin, FALSE);
+
+	return NULL;
 }

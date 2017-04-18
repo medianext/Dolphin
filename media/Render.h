@@ -9,6 +9,8 @@
 #include "stdafx.h"
 #include "Sink.h"
 
+#define WM_SET_RENDER_SIZE (WM_USER+100)
+
 
 class Render :
     public Sink

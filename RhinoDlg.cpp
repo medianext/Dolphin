@@ -314,6 +314,7 @@ void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
             cameraCapture->Start();
 		}
 		else {
+			cameraCapture->Stop();
 			m_renderDlg.ShowWindow(SW_HIDE);
 		}
 	}

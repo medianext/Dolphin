@@ -36,9 +36,10 @@ private:
     ID3D11Device* m_pD3d11Device = nullptr;
     IDXGISwapChain* m_pSwapChain = nullptr;
     ID3D11DeviceContext* m_pD3d11DeviceContext = nullptr;
+	ID3D11Texture2D* m_pTexture = nullptr;
 
     RECT                    m_rcCanvas;
-    RECT                    m_rcDest;
+    RECT                    m_rcSrc;
 
     GUID                    m_subtype;
 

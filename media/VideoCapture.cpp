@@ -32,7 +32,6 @@ VideoCapture::VideoCapture(void * priv) :
 VideoCapture::~VideoCapture()
 {
 	EnterCriticalSection(&m_critsec);
-	SafeRelease(&m_pReader);
 	if (m_pCurrentAttribute)
 	{
 		delete m_pCurrentAttribute;
@@ -445,11 +444,14 @@ int VideoCapture::Start()
 {
 	EnterCriticalSection(&m_critsec);
 
-	this->CreateSourceReader();
+	if (m_Status != CAPTURE_STATUS_START)
+	{
+		this->CreateSourceReader();
 
-	m_pReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
+		m_pReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
 
-	m_Status = CAPTURE_STATUS_START;
+		m_Status = CAPTURE_STATUS_START;
+	}
 
 	LeaveCriticalSection(&m_critsec);
 
@@ -462,6 +464,8 @@ int VideoCapture::Stop()
 	EnterCriticalSection(&m_critsec);
 
 	m_pReader->Flush(MF_SOURCE_READER_FIRST_VIDEO_STREAM);
+
+	SafeRelease(&m_pReader);
 
 	m_Status = CAPTURE_STATUS_STOP;
 
