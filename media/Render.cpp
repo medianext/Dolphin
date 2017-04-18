@@ -6,7 +6,7 @@
 
 #include "stdafx.h"
 #include "Render.h"
-#include "Direct3D9Render.h"
+#include "Direct3D11Render.h"
 
 
 inline LONG Width(const RECT& r)
@@ -418,7 +418,7 @@ Render::~Render()
 void Render::Init(HWND hWnd)
 {
     if (!instanse) {
-        instanse = new Direct3D9Render(hWnd);
+        instanse = new Direct3D11Render(hWnd);
     }
 }
 

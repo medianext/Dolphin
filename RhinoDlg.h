@@ -38,7 +38,8 @@ private:
     DWORD m_dwPauseDuration;
 
     Config * config = NULL;
-	Codec* codec = NULL;
+    Codec* codec = NULL;
+    Render* render = NULL;
     Capture *screenCapture = NULL;
     Capture *speakerCapture = NULL;
     Capture *cameraCapture = NULL;

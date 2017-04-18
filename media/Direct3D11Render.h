@@ -28,6 +28,20 @@ public:
     int DrawFrame(MediaFrame * frame);
 
 private:
+    HRESULT ChooseConversionFunction(REFGUID subtype);
+
+private:
     HWND m_hWnd;
+
+    ID3D11Device* m_pD3d11Device = nullptr;
+    IDXGISwapChain* m_pSwapChain = nullptr;
+    ID3D11DeviceContext* m_pD3d11DeviceContext = nullptr;
+
+    RECT                    m_rcCanvas;
+    RECT                    m_rcDest;
+
+    GUID                    m_subtype;
+
+    IMAGE_TRANSFORM_FN      m_convertFn;
 };
 

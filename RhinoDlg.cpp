@@ -122,6 +122,7 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_PAUSERECORD, MOD_ALT | MOD_NOREPEAT, VK_F10);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
 
+    Render::Init(m_renderDlg.GetSafeHwnd());
  	Capture::Init();
 	screenCapture = Capture::GetScreenCature(0);
     speakerCapture = Capture::GetSpeakerCature(0);
@@ -129,8 +130,10 @@ BOOL CRhinoDlg::OnInitDialog()
     micCapture = Capture::GetAudioCature(0);
 
 	codec = new Codec();
+    render = Render::GetRender();
     screenCapture->AddSink(codec);
     speakerCapture->AddSink(codec);
+    cameraCapture->AddSink(render);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -202,6 +205,7 @@ void CRhinoDlg::OnDestroy()
 
 	// TODO: 在此处添加消息处理程序代码
 	Capture::Uninit();
+    Render::Uninit();
 
 	Shell_NotifyIcon(NIM_DELETE, &m_NotifyIcon);//删除任务栏图标
 
@@ -306,7 +310,8 @@ void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 		BOOL visibale = m_renderDlg.IsWindowVisible();
 		if (visibale == FALSE)
 		{
-			m_renderDlg.ShowWindow(SW_SHOW);
+            m_renderDlg.ShowWindow(SW_SHOW);
+            cameraCapture->Start();
 		}
 		else {
 			m_renderDlg.ShowWindow(SW_HIDE);
@@ -367,6 +372,7 @@ void CRhinoDlg::OnShowAboutDlg()
 void CRhinoDlg::OnShowCameraDlg()
 {
 	m_renderDlg.ShowWindow(SW_SHOW);
+    cameraCapture->Start();
 }
 
 
