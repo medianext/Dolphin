@@ -9,7 +9,7 @@
 
 
 #define REC_CODEC_RAW              0
-#define REC_CODEC_STREAM           1
+#define REC_CODEC_STREAM           0
 
 
 #define COLOR_CONVERT_USE_TABLE    1
@@ -867,6 +867,10 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
 	ofstream pcmfile;
 	pcmfile.open("codec.pcm", ios::out | ios::binary);
 #endif
+#if REC_CODEC_STREAM
+    ofstream aacfile;
+    aacfile.open("codec.aac", ios::out | ios::binary);
+#endif
 
     while (1)
     {
@@ -934,6 +938,13 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 memcpy(packet->m_pData, outbuf.bufs[0], size);
                 packet->m_uTimestamp = timestamp / 1000;
 
+
+#if REC_CODEC_STREAM
+                if (aacfile.is_open())
+                {
+                    aacfile.write((char *)packet->m_pData, packet->m_dataSize);
+                }
+#endif
                 //codec->PushAudioPacket(packet);
 				delete packet;
             }
@@ -948,6 +959,13 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
 		pcmfile.flush();
 		pcmfile.close();
 	}
+#endif
+#if REC_CODEC_STREAM
+    if (aacfile.is_open())
+    {
+        aacfile.flush();
+        aacfile.close();
+    }
 #endif
 
     free(pinbuf);

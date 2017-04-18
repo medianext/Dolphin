@@ -9,9 +9,6 @@
 #include <d3d11.h>
 #include "ScreenCapture.h"
 
-#define UPPERDIV(dividend, divisor) (dividend%divisor==0?dividend:((dividend/divisor+1)*divisor))
-#define LOWERDIV(dividend, divisor) (dividend%divisor==0?dividend:((dividend/divisor)*divisor))
-
 
 ScreenCapture::ScreenCapture()
 {

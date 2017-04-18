@@ -40,9 +40,6 @@ private:
     IAudioClient* m_pClient = nullptr;
     IAudioCaptureClient* m_pCapture = nullptr;
 
-    HANDLE    m_hSignalEvent = NULL;
-    HANDLE    m_hExitEvent = NULL;
-
     static DWORD WINAPI CaptureSpeakerThread(LPVOID lpParam);
 
 public:

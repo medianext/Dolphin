@@ -15,6 +15,39 @@ MediaFrame::MediaFrame():
 }
 
 
+MediaFrame::MediaFrame(FrameType frameType, void* attribute)
+{
+    m_FrameType = frameType;
+    if (m_FrameType == FRAME_TYPE_VIDEO)
+    {
+        VideoCaptureAttribute* pattr = (VideoCaptureAttribute*)attribute;
+        m_subtype = pattr->format;
+        m_width = pattr->width;
+        m_height = pattr->height;
+        m_stride = pattr->stride;
+        if (m_width>0 && m_height>0 && m_stride>0)
+        {
+            m_dataSize = m_stride * m_height;
+            m_pData = (BYTE*)malloc(m_dataSize);
+        }
+    }
+    else if(m_FrameType == FRAME_TYPE_AUDIO)
+    {
+        AudioCaptureAttribute* pattr = (AudioCaptureAttribute*)attribute;
+        m_subtype = pattr->format;
+        m_samplesize = pattr->samplesize;
+        m_samplerate = pattr->samplerate;
+        m_channels = pattr->channel;
+        m_bitwide = pattr->bitwide;
+        if (m_samplesize>0 && m_channels>0 && m_bitwide>0)
+        {
+            m_dataSize = m_samplesize * m_channels * m_bitwide / 8;
+            m_pData = (BYTE*)malloc(m_dataSize);
+        }
+    }
+}
+
+
 MediaFrame::MediaFrame(FrameType frameType, GUID  subtype, DWORD dataSize)
 {
 	m_pData = (BYTE*)malloc(dataSize);
@@ -113,4 +146,44 @@ void MediaFrame::Inversion()
 	}
 	free(m_pData);
 	m_pData = pData;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+//////////////////////////////////////////////////////////////////////////
+
+uint32_t MediaFrame::CopyTo(void* pData, uint32_t dataSize) const
+{
+    uint32_t size = dataSize > m_dataSize ? m_dataSize : dataSize;
+    if (size>0 && pData && m_pData)
+    {
+        memcpy(pData, m_pData, size);
+        return size;
+    }
+    return 0;
+}
+
+
+uint32_t MediaFrame::CopyFrom(void* pData, uint32_t dataSize) const
+{
+    uint32_t size = dataSize > m_dataSize ? m_dataSize : dataSize;
+    if (size > 0 && pData && m_pData)
+    {
+        memcpy(m_pData, pData, size);
+        return size;
+    }
+    return 0;
+}
+
+
+FrameType MediaFrame::GetFrameType() const
+{
+    return m_FrameType;
+}
+
+
+uint32_t MediaFrame::GetFrameSize() const
+{
+    return m_dataSize;
 }

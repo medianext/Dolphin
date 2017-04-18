@@ -11,15 +11,16 @@
 struct VideoCaptureAttribute {
     GUID format;
     int width;
-    int stride;
     int height;
+    int stride;
     int fps;
 };
 
 struct AudioCaptureAttribute {
     GUID format;
-    int channel;
+    int samplesize;
     int samplerate;
+    int channel;
     int bitwide;
 };
 
@@ -75,3 +76,9 @@ public:
 bool IsVideoFormatSupport(const GUID &guid);
 bool IsAudioFormatSupport(GUID &guid);
 LPCTSTR GetFormatName(GUID &guid);
+
+
+#define UPPERDIV(dividend, divisor) ((dividend)%(divisor)==0?(dividend):(((dividend)/(divisor)+1)*(divisor)))
+#define LOWERDIV(dividend, divisor) ((dividend)%(divisor)==0?(dividend):(((dividend)/(divisor))*£¨divisor)))
+
+#define CLIP(num, h, l) (((num) < (l) ? (l) : ((num) > (h) ? (h) : (num))))

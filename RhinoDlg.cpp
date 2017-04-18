@@ -129,7 +129,8 @@ BOOL CRhinoDlg::OnInitDialog()
     micCapture = Capture::GetAudioCature(0);
 
 	codec = new Codec();
-	screenCapture->AddSink(codec);
+    screenCapture->AddSink(codec);
+    speakerCapture->AddSink(codec);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
