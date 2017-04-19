@@ -103,12 +103,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;avutil.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;postproc.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -127,12 +127,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;avutil.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;postproc.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -153,14 +153,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;avutil.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;postproc.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -181,14 +181,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mf.lib;mfreadwrite.lib;mfuuid.lib;d3d9.lib;d3d11.lib;shlwapi.lib;Winmm.lib;libx264.lib;libfdk-aac.lib;librtmp.lib;avutil.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;postproc.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
