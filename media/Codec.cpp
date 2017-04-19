@@ -547,9 +547,8 @@ int Codec::FreeMemory()
 	EnterCriticalSection(&m_vfMtx);
 	while (!videoFrameQueue.empty())
 	{
-		x264_picture_t *pic = videoFrameQueue.front();
+        MediaFrame *pic = videoFrameQueue.front();
 		videoFrameQueue.pop();
-		x264_picture_clean(pic);
 		delete pic;
 	}
 	LeaveCriticalSection(&m_vfMtx);
@@ -584,9 +583,9 @@ int Codec::FreeMemory()
 }
 
 
-x264_picture_t* Codec::PopVideoPicture()
+MediaFrame* Codec::PopVideoPicture()
 {
-	x264_picture_t *pic = NULL;
+    MediaFrame *pic = NULL;
 	EnterCriticalSection(&m_vfMtx);
 	if (!videoFrameQueue.empty())
 	{
@@ -598,7 +597,7 @@ x264_picture_t* Codec::PopVideoPicture()
 }
 
 
-void Codec::PushVideoPicture(x264_picture_t* pic)
+void Codec::PushVideoPicture(MediaFrame* pic)
 {
 	if (pic)
 	{
@@ -728,6 +727,12 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 	h264file.open("codec.h264", ios::out | ios::binary);
 #endif
 
+    x264_picture_t* pic = new x264_picture_t;
+    if (pic == NULL)
+    {
+        return -1;
+    }
+
 	while (1)
 	{
 		if (codec->m_QuitCmd==1)
@@ -735,8 +740,8 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 			break;
 		}
 
-		x264_picture_t* pic = codec->PopVideoPicture();
-		if (pic == NULL)
+        MediaFrame* frame = codec->PopVideoPicture();
+		if (frame == NULL)
         {
             Sleep(10);
 			continue;
@@ -745,9 +750,20 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 #if REC_CODEC_RAW
         if (yuvfile.is_open())
         {
-			yuvfile.write((char*)pic->img.plane[0], codec->m_videoAttribute.width * codec->m_videoAttribute.height * 3 / 2);
+			yuvfile.write((char*)frame->m_pData, frame->GetFrameSize());
         }
 #endif
+
+        x264_picture_init(pic);
+        pic->img.i_csp = X264_CSP_I420;
+        pic->img.i_plane = 3;
+        pic->img.i_stride[0] = frame->m_width;
+        pic->img.i_stride[1] = frame->m_width / 2;
+        pic->img.i_stride[2] = frame->m_width / 2;
+        pic->img.plane[0] = frame->m_pData;
+        pic->img.plane[1] = pic->img.plane[0] + frame->m_stride * frame->m_height;
+        pic->img.plane[2] = pic->img.plane[1] + frame->m_stride * frame->m_height / 4;
+        pic->i_pts = frame->m_uTimestamp;
 
 		x264_picture_t pic_out;
 		x264_nal_t *nal;
@@ -793,10 +809,9 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
             //codec->PushVideoPacket(packet);
 			delete packet;
 		}
-
-		x264_picture_clean(pic);
-		delete pic;
-	}
+    }
+    
+    delete pic;
 
 #if REC_CODEC_STREAM
 	if (h264file.is_open())
@@ -1020,30 +1035,24 @@ int Codec::SendFrame(MediaFrame * frame)
 			return -1;
 		}
 
-		x264_picture_t* pic = new x264_picture_t;
-		if (pic == NULL)
-		{
-			return -1;
-		}
-		x264_picture_init(pic);
-		ret = x264_picture_alloc(pic, X264_CSP_I420, m_videoAttribute.width, m_videoAttribute.height);
-		if (ret != 0)
-		{
-			delete pic;
-			return -1;
-		}
+        VideoCaptureAttribute attr = {0};
+        attr.width = m_videoAttribute.width;
+        attr.height = m_videoAttribute.height;
+        attr.stride = m_videoAttribute.width;
+        attr.format = MFVideoFormat_I420;
+        MediaFrame* yuvFrame = new MediaFrame(FRAME_TYPE_VIDEO, &attr);
+        yuvFrame->m_uTimestamp = frame->m_uTimestamp;
 
 		m_videoConvertFn(
-			pic->img.plane[0],
-			pic->img.i_stride[0],
+            yuvFrame->m_pData,
+            yuvFrame->m_stride,
 			frame->m_pData,
 			frame->m_stride,
 			frame->m_width,
 			frame->m_height
 			);
-		pic->i_pts = frame->m_uTimestamp;
 
-		PushVideoPicture(pic);
+		PushVideoPicture(yuvFrame);
     } 
     else if(frame->m_FrameType == FRAME_TYPE_AUDIO)
 	{

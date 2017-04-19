@@ -99,8 +99,8 @@ private:
 	int AllocMemory();
 	int FreeMemory();
 
-	x264_picture_t* PopVideoPicture();
-	void PushVideoPicture(x264_picture_t* pic);
+    MediaFrame* PopVideoPicture();
+	void PushVideoPicture(MediaFrame* pic);
 
 	MediaPacket* PopVideoPacket();
 	void PushVideoPacket(MediaPacket* packet);
@@ -141,7 +141,7 @@ private:
 	CRITICAL_SECTION        m_afMtx;
 	CRITICAL_SECTION        m_apMtx;
 
-	queue<x264_picture_t *> videoFrameQueue;
+	queue<MediaFrame *> videoFrameQueue;
 	queue<MediaPacket *> videoPacketQueue;
 
 	queue<MediaFrame *> audioFrameQueue;

@@ -27,7 +27,13 @@ MediaFrame::MediaFrame(FrameType frameType, void* attribute)
         m_stride = pattr->stride;
         if (m_width>0 && m_height>0 && m_stride>0)
         {
-            m_dataSize = m_stride * m_height;
+            if (m_subtype==MFVideoFormat_I420)
+            {
+                m_dataSize = m_stride * m_height * 3 / 2;
+            }
+            else {
+                m_dataSize = m_stride * m_height;
+            }
             m_pData = (BYTE*)malloc(m_dataSize);
         }
     }
