@@ -79,12 +79,26 @@ BOOL CRhinoDlg::OnInitDialog()
 	// 设置此对话框的图标。  当应用程序主窗口不是对话框时，框架将自动
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
-	SetIcon(m_hIcon, FALSE);		// 设置小图标
+    SetIcon(m_hIcon, FALSE);		// 设置小图标
 
     config = new Config(TEXT("config.dat"));
     m_configDlg.Create(IDD_CONFIG_DIALOG, this);
     m_configDlg.SetConfig(config);
-	m_renderDlg.Create(IDD_RENDER_DIALOG, this);
+    m_renderDlg.Create(IDD_RENDER_DIALOG, this);
+
+    Render::Init(m_renderDlg.GetSafeHwnd());
+    Capture::Init();
+    screenCapture = Capture::GetScreenCature(0);
+    speakerCapture = Capture::GetSpeakerCature(0);
+    cameraCapture = Capture::GetVideoCature(0);
+    micCapture = Capture::GetAudioCature(0);
+
+    codec = new Codec();
+    render = Render::GetRender();
+    screenCapture->AddSink(codec);
+    speakerCapture->AddSink(codec);
+    cameraCapture->AddSink(render);
+    m_renderDlg.SetVideoSource(cameraCapture);
 
 	BOOL ret;
 
@@ -121,19 +135,6 @@ BOOL CRhinoDlg::OnInitDialog()
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STARTRECORD, MOD_ALT | MOD_NOREPEAT, VK_F9);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_PAUSERECORD, MOD_ALT | MOD_NOREPEAT, VK_F10);
 	ret = RegisterHotKey(GetSafeHwnd(), WM_STOPRECORD, MOD_ALT | MOD_NOREPEAT, VK_F11);
-
-    Render::Init(m_renderDlg.GetSafeHwnd());
- 	Capture::Init();
-	screenCapture = Capture::GetScreenCature(0);
-    speakerCapture = Capture::GetSpeakerCature(0);
-    cameraCapture = Capture::GetVideoCature(0);
-    micCapture = Capture::GetAudioCature(0);
-
-	codec = new Codec();
-    render = Render::GetRender();
-    screenCapture->AddSink(codec);
-    speakerCapture->AddSink(codec);
-    cameraCapture->AddSink(render);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -311,10 +312,8 @@ void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 		if (visibale == FALSE)
 		{
             m_renderDlg.ShowWindow(SW_SHOW);
-            cameraCapture->Start();
 		}
-		else {
-			cameraCapture->Stop();
+        else {
 			m_renderDlg.ShowWindow(SW_HIDE);
 		}
 	}

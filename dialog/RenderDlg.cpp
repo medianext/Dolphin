@@ -6,6 +6,8 @@
 #include "afxdialogex.h"
 #include "RenderDlg.h"
 
+#define WM_TOPMOST (WM_USER+200)
+
 
 // RenderDlg 对话框
 
@@ -34,9 +36,11 @@ BEGIN_MESSAGE_MAP(RenderDlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONUP()
-	ON_COMMAND(WM_CLOSE, &RenderDlg::OnClose)
+    ON_COMMAND(WM_CLOSE, &RenderDlg::OnClose)
+    ON_COMMAND(WM_TOPMOST, &RenderDlg::OnTopWindow)
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSELEAVE()
+    ON_WM_SHOWWINDOW()
 	ON_MESSAGE(WM_SET_RENDER_SIZE, &RenderDlg::OnSetRenderSize)
 END_MESSAGE_MAP()
 
@@ -50,7 +54,8 @@ BOOL RenderDlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化
 	m_ContextMenu.CreatePopupMenu();
-	m_ContextMenu.AppendMenu(MF_STRING, WM_CLOSE, TEXT("隐藏"));
+    m_ContextMenu.AppendMenu(MF_STRING, WM_CLOSE, TEXT("隐藏"));
+    m_ContextMenu.AppendMenu(MF_STRING, WM_TOPMOST, TEXT("取消窗口最前"));
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
@@ -138,7 +143,39 @@ void RenderDlg::OnMouseMove(UINT nFlags, CPoint point)
 }
 
 
-afx_msg LRESULT RenderDlg::OnSetRenderSize(WPARAM wParam, LPARAM lParam)
+afx_msg void RenderDlg::OnShowWindow(BOOL bShow, UINT nStatus)
+{
+    CDialogEx::OnShowWindow(bShow, nStatus);
+
+    // TODO: 在此处添加消息处理程序代码
+    if (bShow)
+    {
+        m_capture->Start();
+    }
+    else
+    {
+        m_capture->Stop();
+    }
+}
+
+
+void RenderDlg::OnTopWindow()
+{
+    LONG exStyle = GetWindowLongPtr(GetSafeHwnd(), GWL_EXSTYLE);
+    if (exStyle&WS_EX_TOPMOST)
+    {
+        m_ContextMenu.ModifyMenu(WM_TOPMOST, MF_BYCOMMAND|MF_STRING, WM_TOPMOST,TEXT("窗口总是最前"));
+        SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+    }
+    else
+    {
+        m_ContextMenu.ModifyMenu(WM_TOPMOST, MF_BYCOMMAND|MF_STRING, WM_TOPMOST, TEXT("取消窗口最前"));
+        SetWindowPos(&CWnd::wndTopMost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+    }
+}
+
+
+LRESULT RenderDlg::OnSetRenderSize(WPARAM wParam, LPARAM lParam)
 {
 	RECT* prcSrc = (RECT*)lParam;
 	RECT rcWin;
@@ -148,4 +185,10 @@ afx_msg LRESULT RenderDlg::OnSetRenderSize(WPARAM wParam, LPARAM lParam)
 	MoveWindow(&rcWin, FALSE);
 
 	return NULL;
+}
+
+
+void RenderDlg::SetVideoSource(Capture* capture)
+{
+    m_capture = capture;
 }
