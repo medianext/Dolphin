@@ -442,9 +442,10 @@ int Codec::ConfigVideoCodec()
     m_pVideoEncoder->width = m_videoAttribute.width;
     m_pVideoEncoder->height = m_videoAttribute.height;
     m_pVideoEncoder->gop_size = m_videoAttribute.fps;
-    m_pVideoEncoder->max_b_frames = 1;
+	m_pVideoEncoder->bit_rate = m_videoAttribute.bitrate*1000;
+    m_pVideoEncoder->max_b_frames = 0;
     m_pVideoEncoder->pix_fmt = AV_PIX_FMT_YUV420P;
-    m_pVideoEncoder->time_base = { 1, m_videoAttribute.fps };
+    m_pVideoEncoder->time_base = { 1, 1000000 };
     av_opt_set(m_pVideoEncoder->priv_data, "preset", "slow", 0);
 
     ret = avcodec_open2(m_pVideoEncoder, codec, NULL);
@@ -781,6 +782,41 @@ int Codec::UninitCodec()
 }
 
 
+int Codec::InitMuxer()
+{
+#if USE_FFMPEG
+	int ret = 0;
+	char* filename = "recorder.mp4";
+
+	AVStream* a_st = NULL;
+	AVStream* v_st = NULL;
+
+	ret = avformat_alloc_output_context2(&m_pFormatCtx, NULL, NULL, filename);
+
+	//a_st = avformat_new_stream(m_pFormatCtx, m_pAudioEncoder->codec);
+	v_st = avformat_new_stream(m_pFormatCtx, m_pVideoEncoder->codec);
+	v_st->time_base = m_pVideoEncoder->time_base;
+
+	ret = avio_open(&m_pFormatCtx->pb, filename, AVIO_FLAG_WRITE);
+
+	ret = avformat_write_header(m_pFormatCtx, NULL);
+
+#endif
+	return 0;
+}
+
+
+int Codec::UninitMuxer()
+{
+#if USE_FFMPEG
+	av_write_trailer(m_pFormatCtx);
+	avio_close(m_pFormatCtx->pb);
+	avformat_free_context(m_pFormatCtx);
+#endif
+	return 0;
+}
+
+
 DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 {
 	Codec* codec = (Codec*)lpParam;
@@ -801,6 +837,7 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 #if USE_FFMPEG
     AVFrame* pic = av_frame_alloc();
     AVPacket pkt;
+	int stream_index = av_find_best_stream(codec->m_pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);;
 #else
     x264_picture_t* pic = new x264_picture_t;
 #endif
@@ -840,6 +877,13 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
         pic->format = codec->m_pVideoEncoder->pix_fmt;
         pic->width = codec->m_pVideoEncoder->width;
         pic->height = codec->m_pVideoEncoder->height;
+		pic->linesize[0] = codec->m_pVideoEncoder->width;
+		pic->linesize[1] = pic->width / 2;
+		pic->linesize[2] = pic->width / 2;
+		pic->data[0] = frame->m_pData;
+		pic->data[1] = pic->data[0] + pic->width * pic->height;
+		pic->data[2] = pic->data[1] + pic->width * pic->height / 4;
+		pic->pts = frame->m_uTimestamp;
 
         int ret = avcodec_encode_video2(codec->m_pVideoEncoder, &pkt, pic, &get_packet);
         if (ret<0)
@@ -856,6 +900,9 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
                 packet->m_bKeyframe = true;
             }
             packet->m_uTimestamp = pkt.pts / 1000;
+
+			pkt.stream_index = stream_index;
+			ret = av_write_frame(codec->m_pFormatCtx, &pkt);
         }
 #else
         x264_picture_init(pic);
@@ -907,6 +954,7 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
             //codec->PushVideoPacket(packet);
             delete packet;
         }
+		delete frame;
 
         //Statistics
         finish = clock();
@@ -1056,16 +1104,16 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
 #if USE_FFMPEG
             if (pframeleft < in_size - in_cursize)
             {
-                memcpy(&(pcm->data[0][in_cursize]), &frame->m_pData[frame->m_dataSize - pframeleft], pframeleft);
-                memcpy(&(pcm->data[1][in_cursize]), &(frame->m_pData+ frame->m_dataSize/2)[frame->m_dataSize - pframeleft], pframeleft);
+                memcpy(&(pcm->data[0][in_cursize]), &frame->m_pData[frame->m_dataSize/2 - pframeleft], pframeleft);
+                memcpy(&(pcm->data[1][in_cursize]), &(frame->m_pData+ frame->m_dataSize/2)[frame->m_dataSize/2 - pframeleft], pframeleft);
                 in_cursize += pframeleft;
                 pframeleft = 0;
                 break;
             }
             else
             {
-                memcpy(&pcm->data[0][in_cursize], &frame->m_pData[frame->m_dataSize - pframeleft], in_size - in_cursize);
-                memcpy(&pcm->data[1][in_cursize], &(frame->m_pData + frame->m_dataSize / 2)[frame->m_dataSize - pframeleft], in_size - in_cursize);
+                memcpy(&pcm->data[0][in_cursize], &frame->m_pData[frame->m_dataSize/2 - pframeleft], in_size - in_cursize);
+                memcpy(&pcm->data[1][in_cursize], &(frame->m_pData + frame->m_dataSize / 2)[frame->m_dataSize/2 - pframeleft], in_size - in_cursize);
                 pframeleft -= in_size - in_cursize;
                 in_cursize = 0;
             }
@@ -1327,6 +1375,7 @@ int Codec::GetAudioCodecAttribute(const AudioCodecAttribute** attribute)
 int Codec::Start()
 {
 	InitCodec();
+	InitMuxer();
 	m_QuitCmd = 0;
     m_videoThread = CreateThread(NULL, 0, VideoEncodecThread, this, 0, NULL);
     m_audioThread = CreateThread(NULL, 0, AudioEncodecThread, this, 0, NULL);
@@ -1347,6 +1396,7 @@ int Codec::Stop()
 	m_QuitCmd = 1;
     WaitForSingleObject(m_videoThread, INFINITE);
     WaitForSingleObject(m_audioThread, INFINITE);
+	UninitMuxer();
 	UninitCodec();
 
 	return 0;

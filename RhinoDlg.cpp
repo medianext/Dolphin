@@ -436,6 +436,7 @@ void CRhinoDlg::StartRecord()
     config->GetCodecConfig(codecConfig);
 
 	VideoCaptureAttribute v_cap_attribute = { 0 };
+	AudioCaptureAttribute a_cap_attribute = { 0 };
 	screenCapture->GetConfig(&v_cap_attribute);
 	v_cap_attribute.fps = codecConfig.videoFps;
 	screenCapture->SetConfig(&v_cap_attribute);
@@ -444,9 +445,6 @@ void CRhinoDlg::StartRecord()
     speakerCapture->Start();
 
 	screenCapture->GetConfig(&v_cap_attribute);
-    AudioCaptureAttribute a_cap_attribute = {0};
-    micCapture->GetConfig(&a_cap_attribute);
-
 	VideoCodecAttribute v_attribute = { 0 };
 	v_attribute.width = v_cap_attribute.width;
 	v_attribute.height = v_cap_attribute.height;
@@ -455,6 +453,7 @@ void CRhinoDlg::StartRecord()
 	v_attribute.bitrate = codecConfig.videoBitrate;
 	codec->SetVideoCodecAttribute(&v_attribute);
 
+	speakerCapture->GetConfig(&a_cap_attribute);
     AudioCodecAttribute a_attribute = { 0 };
     a_attribute.samplerate = a_cap_attribute.samplerate;
     a_attribute.channel = a_cap_attribute.channel;

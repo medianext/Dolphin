@@ -110,6 +110,9 @@ private:
 	int InitCodec();
 	int UninitCodec();
 
+	int InitMuxer();
+	int UninitMuxer();
+
 	int AllocMemory();
 	int FreeMemory();
 
@@ -144,8 +147,9 @@ private:
 	VideoCodecAttribute      m_videoAttribute = { 0 };
 	AudioCodecAttribute      m_audioAttribute = { 0 };
 #if USE_FFMPEG
-    AVCodecContext*          m_pAudioEncoder;
-    AVCodecContext*          m_pVideoEncoder;
+    AVCodecContext*          m_pAudioEncoder = NULL;
+    AVCodecContext*          m_pVideoEncoder = NULL;
+	AVFormatContext*         m_pFormatCtx = NULL;
 #else
     HANDLE_AACENCODER        m_audioEncoder = NULL;
     x264_t*                  m_videoEncoder = NULL;
