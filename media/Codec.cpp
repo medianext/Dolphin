@@ -9,7 +9,7 @@
 
 
 #define REC_CODEC_RAW              0
-#define REC_CODEC_STREAM           0
+#define REC_CODEC_STREAM           1
 
 
 #define COLOR_CONVERT_USE_TABLE    1
@@ -311,23 +311,32 @@ const DWORD   g_cVideoFormats = ARRAYSIZE(g_VideoConversions);
 //-------------------------------------------------------------------
 // TransformImage_FLTP
 //
-// FLTP to S16
+// FLT to S16(libfdk-aac) or FLTP(ffmpeg)
 //-------------------------------------------------------------------
 
-static void TransformImage_FLTP(MediaFrame* srcFrame, MediaFrame* dstFrame)
+static void TransformAudio_FLT(MediaFrame* srcFrame, MediaFrame* dstFrame)
 {
-	short* dstData = (short*)dstFrame->m_pData;
-	float* srcData = (float*)srcFrame->m_pData;
-	int sampleCnt = dstFrame->m_dataSize * 8 / dstFrame->m_bitwide;
+    int sampleCnt = srcFrame->m_dataSize * 8 / srcFrame->m_bitwide / srcFrame->m_channels;
+    float* srcData = (float*)srcFrame->m_pData;
+#if USE_FFMPEG
+    float* lData = (float*)dstFrame->m_pData;
+    float* rData = (float*)(dstFrame->m_pData + dstFrame->m_dataSize/2);
+    for (int i = 0; i < sampleCnt; i++)
+    {
+        *lData++ = *srcData++;
+        *rData++ = *srcData++;
+    }
+#else
+    short* dstData = (short*)dstFrame->m_pData;
 	if (srcFrame->m_channels==dstFrame->m_channels)
     {
-        for (int i = 0; i < sampleCnt; i++)
+        for (int i = 0; i < sampleCnt * 2; i++)
         {
             *dstData++ = (short)((*srcData++) * 32767.0f);
         }
 	}else if (srcFrame->m_channels==1 && dstFrame->m_channels==2)
 	{
-		for (int i = 0; i < sampleCnt; i++)
+		for (int i = 0; i < sampleCnt*2; i++)
 		{
 			*dstData++ = (short)((*srcData++) * 32767.0f);
 			*dstData++ = *dstData;
@@ -335,12 +344,13 @@ static void TransformImage_FLTP(MediaFrame* srcFrame, MediaFrame* dstFrame)
 	}else if (srcFrame->m_channels == 2 && dstFrame->m_channels == 1)
 	{
 	}
+#endif
 }
 
 
 static AudioConversionFunction g_AudioConversions[] =
 {
-	{ MFAudioFormat_Float,  TransformImage_FLTP }
+	{ MFAudioFormat_Float,  TransformAudio_FLT }
 };
 
 const DWORD   g_cAudioFormats = ARRAYSIZE(g_AudioConversions);
@@ -351,10 +361,7 @@ const DWORD   g_cAudioFormats = ARRAYSIZE(g_AudioConversions);
 // 
 //////////////////////////////////////////////////////////////////////////
 
-Codec::Codec() :
-    m_videoEncoder(NULL),
-    m_audioEncoder(NULL),
-    m_Status(0)
+Codec::Codec()
 {
 	InitializeCriticalSection(&m_vfMtx);
 	InitializeCriticalSection(&m_vpMtx);
@@ -419,6 +426,34 @@ HRESULT Codec::ChooseConversionFunction(AttributeType type, REFGUID subtype)
 int Codec::ConfigVideoCodec()
 {
     int ret = 0;
+#if USE_FFMPEG
+    AVCodec* codec = avcodec_find_encoder_by_name("libx264");
+    if (codec==NULL)
+    {
+        codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    }
+    if (codec==NULL)
+    {
+        return -1;
+    }
+
+    m_pVideoEncoder = avcodec_alloc_context3(codec);
+
+    m_pVideoEncoder->width = m_videoAttribute.width;
+    m_pVideoEncoder->height = m_videoAttribute.height;
+    m_pVideoEncoder->gop_size = m_videoAttribute.fps;
+    m_pVideoEncoder->max_b_frames = 1;
+    m_pVideoEncoder->pix_fmt = AV_PIX_FMT_YUV420P;
+    m_pVideoEncoder->time_base = { 1, m_videoAttribute.fps };
+    av_opt_set(m_pVideoEncoder->priv_data, "preset", "slow", 0);
+
+    ret = avcodec_open2(m_pVideoEncoder, codec, NULL);
+    if (ret < 0)
+    {
+        avcodec_free_context(&m_pVideoEncoder);
+        return -1;
+    }
+#else
 	x264_param_t param;
 
     ret = x264_param_default_preset(&param, "veryfast","zerolatency");
@@ -458,18 +493,40 @@ int Codec::ConfigVideoCodec()
 	if (m_videoEncoder)
 	{
 		x264_encoder_parameters(m_videoEncoder, &param);
-		return 0;
 	}
 	else
 	{
 		return -1;
 	}
-
+#endif
+    return 0;
 }
 
 
 int Codec::ConfigAudioCodec()
 {
+    int ret = 0;
+#if USE_FFMPEG
+    AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+    if (codec == NULL)
+    {
+        return -1;
+    }
+
+    m_pAudioEncoder = avcodec_alloc_context3(codec);
+    m_pAudioEncoder->bit_rate = m_audioAttribute.bitrate * 1000;
+    m_pAudioEncoder->sample_fmt = AV_SAMPLE_FMT_FLTP;
+    m_pAudioEncoder->sample_rate = m_audioAttribute.samplerate;
+    m_pAudioEncoder->channels = m_audioAttribute.channel;
+    m_pAudioEncoder->channel_layout = av_get_default_channel_layout(m_audioAttribute.channel);
+
+    ret = avcodec_open2(m_pAudioEncoder, NULL, NULL);
+    if (ret < 0)
+    {
+        avcodec_free_context(&m_pAudioEncoder);
+        return -1;
+    }
+#else
 	if (aacEncOpen(&m_audioEncoder, 0, m_audioAttribute.channel) != AACENC_OK) {
 		OutputDebugString(TEXT("Open AAC encode handle failed!\n"));
         return -1;
@@ -532,7 +589,7 @@ int Codec::ConfigAudioCodec()
 		OutputDebugString(TEXT("Unable to get the encoder info\n"));
 		return 1;
 	}
-
+#endif
 	return 0;
 }
 
@@ -685,6 +742,9 @@ void Codec::PushAudioPacket(MediaPacket* packet)
 
 int Codec::InitCodec()
 {
+#if USE_FFMPEG
+    av_register_all();
+#endif
 	ConfigVideoCodec();
 	ConfigAudioCodec();
 	AllocMemory();
@@ -694,6 +754,16 @@ int Codec::InitCodec()
 
 int Codec::UninitCodec()
 {
+#if USE_FFMPEG
+    if (m_pVideoEncoder)
+    {
+        avcodec_free_context(&m_pVideoEncoder);
+    }
+    if (m_pAudioEncoder)
+    {
+        avcodec_free_context(&m_pAudioEncoder);
+    }
+#else
 	if (m_videoEncoder)
 	{
 		x264_encoder_close(m_videoEncoder);
@@ -705,6 +775,7 @@ int Codec::UninitCodec()
 		aacEncClose(&m_audioEncoder);
 		m_audioEncoder = NULL;
 	}
+#endif
 	FreeMemory();
 	return 0;
 }
@@ -727,7 +798,12 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 	h264file.open("codec.h264", ios::out | ios::binary);
 #endif
 
+#if USE_FFMPEG
+    AVFrame* pic = av_frame_alloc();
+    AVPacket pkt;
+#else
     x264_picture_t* pic = new x264_picture_t;
+#endif
     if (pic == NULL)
     {
         return -1;
@@ -747,13 +823,41 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 			continue;
         }
 
+        int get_packet = 0;
+        MediaPacket* packet = nullptr;
+
 #if REC_CODEC_RAW
         if (yuvfile.is_open())
         {
 			yuvfile.write((char*)frame->m_pData, frame->GetFrameSize());
         }
 #endif
+#if USE_FFMPEG
+        av_init_packet(&pkt);
+        pkt.data = NULL;    // packet data will be allocated by the encoder
+        pkt.size = 0;
 
+        pic->format = codec->m_pVideoEncoder->pix_fmt;
+        pic->width = codec->m_pVideoEncoder->width;
+        pic->height = codec->m_pVideoEncoder->height;
+
+        int ret = avcodec_encode_video2(codec->m_pVideoEncoder, &pkt, pic, &get_packet);
+        if (ret<0)
+        {
+
+        }
+        if (get_packet)
+        {
+            packet = new MediaPacket(PACKET_TYPE_VIDEO, pkt.size);
+            memcpy(packet->m_pData, pkt.data, pkt.size);
+
+            if (pkt.flags|AV_PKT_FLAG_KEY)
+            {
+                packet->m_bKeyframe = true;
+            }
+            packet->m_uTimestamp = pkt.pts / 1000;
+        }
+#else
         x264_picture_init(pic);
         pic->img.i_csp = X264_CSP_I420;
         pic->img.i_plane = 3;
@@ -773,8 +877,9 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 		i_frame_size = x264_encoder_encode(codec->m_videoEncoder, &nal, &i_nal, pic, &pic_out);
 		if (i_frame_size > 0)
 		{
+            get_packet = 1;
 			//OutputDebugString(TEXT("get video packet.\n"));
-			MediaPacket* packet = new MediaPacket(PACKET_TYPE_VIDEO, i_frame_size);
+			packet = new MediaPacket(PACKET_TYPE_VIDEO, i_frame_size);
 			int size = 0;
 			for (int i = 0; i < i_nal; ++i)
 			{
@@ -788,31 +893,36 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 			}
 			packet->m_uTimestamp = pic_out.i_pts / 1000;
 
-			//Statistics
-			codec->m_videoDecCnt++;
-			finish = clock();
-			if (finish - start >= CLOCKS_PER_SEC)
-			{
-				double fps = ((double)(codec->m_videoDecCnt - preVideoCnt)) * CLOCKS_PER_SEC / (finish - start);
-				codec->m_videoDecFps = fps;
-				preVideoCnt = codec->m_videoDecCnt;
-				start = finish;
-			}
-
-#if REC_CODEC_STREAM
-			if (h264file.is_open())
-			{
-				h264file.write((char *)packet->m_pData, packet->m_dataSize);
-			}
+        }
 #endif
-
+        if (get_packet)
+        {
+#if REC_CODEC_STREAM
+            if (h264file.is_open())
+            {
+                h264file.write((char *)packet->m_pData, packet->m_dataSize);
+            }
+#endif
+            codec->m_videoDecCnt++;
             //codec->PushVideoPacket(packet);
-			delete packet;
-		}
-    }
-    
-    delete pic;
+            delete packet;
+        }
 
+        //Statistics
+        finish = clock();
+        if (finish - start >= CLOCKS_PER_SEC)
+        {
+            double fps = ((double)(codec->m_videoDecCnt - preVideoCnt)) * CLOCKS_PER_SEC / (finish - start);
+            codec->m_videoDecFps = fps;
+            preVideoCnt = codec->m_videoDecCnt;
+            start = finish;
+        }
+    }
+#if USE_FFMPEG
+    av_frame_free(&pic);
+#else
+    delete pic;
+#endif
 #if REC_CODEC_STREAM
 	if (h264file.is_open())
 	{
@@ -837,6 +947,32 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
     Codec* codec = (Codec*)lpParam;
     AudioCodecAttribute attr = codec->m_audioAttribute;
 
+    int in_cursize = 0;
+    int in_size = 1024 * attr.channel * attr.bitwide / 8;
+    void* pinbuf = malloc(in_size);
+
+#if USE_FFMPEG
+    AVFrame* pcm;
+    AVPacket pkt;
+
+    pcm = av_frame_alloc();
+    pcm->nb_samples = 1024;
+    pcm->format = codec->m_pAudioEncoder->sample_fmt;
+    pcm->channel_layout = codec->m_pAudioEncoder->channel_layout;
+    if (attr.channel==1)
+    {
+        pcm->linesize[0] = in_size;
+        pcm->data[0] = (unsigned char*)pinbuf;
+    }
+    else if (attr.channel == 2)
+    {
+        in_size /= 2;
+        pcm->linesize[0] = in_size;
+        pcm->linesize[1] = in_size;
+        pcm->data[0] = (unsigned char*)pinbuf;
+        pcm->data[1] = (unsigned char*)pinbuf + in_size;
+    }
+#else
     AACENC_InfoStruct info = { 0 };
     if (aacEncInfo(codec->m_audioEncoder, &info) != AACENC_OK) {
         OutputDebugString(TEXT("Unable to get the encoder info\n"));
@@ -844,9 +980,6 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
     }
 
     AACENC_BufDesc inbuf = { 0 };
-    int in_cursize = 0;
-    int in_size = 1024 * attr.channel * attr.bitwide / 8;
-    void* pinbuf = malloc(in_size);
     int in_identifier = IN_AUDIO_DATA;
     int in_elem_size = 2;
 
@@ -875,7 +1008,7 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
     in_args.numInSamples = 1024 * attr.channel;
 
     AACENC_OutArgs out_args = { 0 };
-
+#endif
     unsigned long long timestamp = 0;
 
 #if REC_CODEC_RAW
@@ -908,7 +1041,11 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
         }
 #endif
 
+#if USE_FFMPEG
+        int pframeleft = frame->m_dataSize / 2;
+#else
         int pframeleft = frame->m_dataSize;
+#endif
 
         while (1)
         {
@@ -916,7 +1053,42 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
             {
                 break;
             }
+#if USE_FFMPEG
+            if (pframeleft < in_size - in_cursize)
+            {
+                memcpy(&(pcm->data[0][in_cursize]), &frame->m_pData[frame->m_dataSize - pframeleft], pframeleft);
+                memcpy(&(pcm->data[1][in_cursize]), &(frame->m_pData+ frame->m_dataSize/2)[frame->m_dataSize - pframeleft], pframeleft);
+                in_cursize += pframeleft;
+                pframeleft = 0;
+                break;
+            }
+            else
+            {
+                memcpy(&pcm->data[0][in_cursize], &frame->m_pData[frame->m_dataSize - pframeleft], in_size - in_cursize);
+                memcpy(&pcm->data[1][in_cursize], &(frame->m_pData + frame->m_dataSize / 2)[frame->m_dataSize - pframeleft], in_size - in_cursize);
+                pframeleft -= in_size - in_cursize;
+                in_cursize = 0;
+            }
 
+            av_init_packet(&pkt);
+            pkt.data = NULL;    // packet data will be allocated by the encoder
+            pkt.size = 0;
+
+            int get_stream;
+            int ret = avcodec_encode_audio2(codec->m_pAudioEncoder, &pkt, pcm, &get_stream);
+            if (ret < 0)
+            {
+                OutputDebugString(TEXT("Audio Encoding failed\n"));
+                break;
+            }
+            int size = 0;
+            void* pktbuf = NULL;
+            if (get_stream)
+            {
+                size = pkt.size;
+                pktbuf = pkt.data;
+            }
+#else
             if (pframeleft < in_size - in_cursize)
             {
                 memcpy(&((char*)pinbuf)[in_cursize], &frame->m_pData[frame->m_dataSize - pframeleft], pframeleft);
@@ -931,6 +1103,15 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 in_cursize = 0;
             }
 
+            AACENC_ERROR err;
+            if ((err = aacEncEncode(codec->m_audioEncoder, &inbuf, &outbuf, &in_args, &out_args)) != AACENC_OK) {
+                if (err != AACENC_ENCODE_EOF)
+                    OutputDebugString(TEXT("Audio Encoding failed\n"));
+                break;
+            }
+            int size = out_args.numOutBytes;
+            void* pktbuf = outbuf.bufs[0];
+#endif
             if (timestamp == 0)
             {
                 timestamp = frame->m_uTimestamp;
@@ -939,20 +1120,11 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
             {
                 timestamp += 1024 * 1000 * 1000 / attr.samplerate;
             }
-
-            AACENC_ERROR err;
-            if ((err = aacEncEncode(codec->m_audioEncoder, &inbuf, &outbuf, &in_args, &out_args)) != AACENC_OK) {
-                if (err != AACENC_ENCODE_EOF)
-                    OutputDebugString(TEXT("Encoding failed\n"));
-                break;
-            }
-            int size = out_args.numOutBytes;
             if (size)
             {
                 MediaPacket* packet = new MediaPacket(PACKET_TYPE_AUDIO, size);
-                memcpy(packet->m_pData, outbuf.bufs[0], size);
+                memcpy(packet->m_pData, pktbuf, size);
                 packet->m_uTimestamp = timestamp / 1000;
-
 
 #if REC_CODEC_STREAM
                 if (aacfile.is_open())
@@ -984,7 +1156,11 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
 #endif
 
     free(pinbuf);
+#if USE_FFMPEG
+    av_frame_free(&pcm);
+#else
     free(poutbuf);
+#endif
 
 	return 0;
 }
@@ -1128,7 +1304,11 @@ int Codec::SetAudioCodecAttribute(AudioCodecAttribute* attribute)
     if (attribute != NULL)
     {
 		m_audioAttribute = *attribute;
+#if USE_FFMPEG
+        m_audioAttribute.bitwide = 32;
+#else
         m_audioAttribute.bitwide = 16;
+#endif
     }
 	return 0;
 }

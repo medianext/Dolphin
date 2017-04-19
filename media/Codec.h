@@ -6,11 +6,25 @@
 
 #pragma once
 
+#define USE_FFMPEG 1
+
 #include "Sink.h"
 #include "MediaPacket.h"
 
+#if USE_FFMPEG
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
+#include "libavutil/opt.h"
+#ifdef __cplusplus
+}
+#endif
+#else
 #include "x264/x264.h"
 #include "fdk-aac/aacenc_lib.h"
+#endif
 
 #define H264_PROFILE_HIGH 0
 #define H264_PROFILE_MAIN 1
@@ -129,10 +143,13 @@ private:
 
 	VideoCodecAttribute      m_videoAttribute = { 0 };
 	AudioCodecAttribute      m_audioAttribute = { 0 };
-
+#if USE_FFMPEG
+    AVCodecContext*          m_pAudioEncoder;
+    AVCodecContext*          m_pVideoEncoder;
+#else
     HANDLE_AACENCODER        m_audioEncoder = NULL;
     x264_t*                  m_videoEncoder = NULL;
-
+#endif
 	IMAGE_TRANSFORM_FN      m_videoConvertFn;
 	AUDIO_TRANSFORM_FN      m_audioConvertFn;
 
