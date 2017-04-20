@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8CF3964B-329E-4D9C-9FD9-9A560866C8C6}</ProjectGuid>
-    <RootNamespace>Rhino</RootNamespace>
+    <ProjectGuid>{D5DAD660-7BD3-4581-89E4-F71594BA90DC}</ProjectGuid>
+    <RootNamespace>Dolphin</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <Keyword>MFCProj</Keyword>
   </PropertyGroup>
@@ -77,25 +77,21 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)1</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)1</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)1</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>.;include;media;$(IncludePath)</IncludePath>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)1</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -224,8 +220,8 @@
     <ClInclude Include="media\SpeakerCapture.h" />
     <ClInclude Include="media\VideoCapture.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="Rhino.h" />
-    <ClInclude Include="RhinoDlg.h" />
+    <ClInclude Include="Dolphin.h" />
+    <ClInclude Include="DolphinDlg.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -251,8 +247,8 @@
     <ClCompile Include="media\ScreenCapture.cpp" />
     <ClCompile Include="media\SpeakerCapture.cpp" />
     <ClCompile Include="media\VideoCapture.cpp" />
-    <ClCompile Include="Rhino.cpp" />
-    <ClCompile Include="RhinoDlg.cpp" />
+    <ClCompile Include="Dolphin.cpp" />
+    <ClCompile Include="DolphinDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -261,21 +257,21 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Rhino.rc" />
+    <ResourceCompile Include="Dolphin.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="res\Rhino.rc2" />
+    <None Include="res\Dolphin.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\Rhino.ico" />
+    <Image Include="res\Dolphin.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties RESOURCE_FILE="Rhino.rc" />
+      <UserProperties RESOURCE_FILE="Dolphin.rc" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

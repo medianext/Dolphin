@@ -1,5 +1,5 @@
 
-// Rhino.h : PROJECT_NAME 应用程序的主头文件
+// Dolphin.h : PROJECT_NAME 应用程序的主头文件
 //
 
 #pragma once
@@ -11,14 +11,14 @@
 #include "resource.h"		// 主符号
 
 
-// CRhinoApp: 
-// 有关此类的实现，请参阅 Rhino.cpp
+// CDolphinApp: 
+// 有关此类的实现，请参阅 Dolphin.cpp
 //
 
-class CRhinoApp : public CWinApp
+class CDolphinApp : public CWinApp
 {
 public:
-	CRhinoApp();
+	CDolphinApp();
 
 // 重写
 public:
@@ -29,4 +29,4 @@ public:
 	DECLARE_MESSAGE_MAP()
 };
 
-extern CRhinoApp theApp;
+extern CDolphinApp theApp;

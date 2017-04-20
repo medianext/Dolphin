@@ -1,5 +1,5 @@
 
-// RhinoDlg.h : 头文件
+// DolphinDlg.h : 头文件
 //
 
 #pragma once

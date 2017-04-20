@@ -1,9 +1,9 @@
-// F:\Workspace\MediaStudio\Rhino\dialog\CapConfigDlg.cpp : 实现文件
+// F:\Workspace\MediaStudio\Dolphin\dialog\CapConfigDlg.cpp : 实现文件
 //
 
 #include "stdafx.h"
 #include "../Config.h"
-#include "../Rhino.h"
+#include "../Dolphin.h"
 #include "CapConfigDlg.h"
 #include "afxdialogex.h"
 

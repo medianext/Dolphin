@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "../Rhino.h"
+#include "../Dolphin.h"
 #include "afxdialogex.h"
 #include "RenderDlg.h"
 

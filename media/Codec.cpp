@@ -1226,7 +1226,7 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
                 pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
                 pkt.stream_index = stream_index;
-                ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
+                //ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
                 if (ret < 0)
                 {
                     OutputDebugString(TEXT("write audio packet failed!\n"));

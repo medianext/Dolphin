@@ -1,26 +1,26 @@
 
-// Rhino.cpp : 定义应用程序的类行为。
+// Dolphin.cpp : 定义应用程序的类行为。
 //
 
 #include "stdafx.h"
-#include "Rhino.h"
-#include "RhinoDlg.h"
+#include "Dolphin.h"
+#include "DolphinDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
-// CRhinoApp
+// CDolphinApp
 
-BEGIN_MESSAGE_MAP(CRhinoApp, CWinApp)
+BEGIN_MESSAGE_MAP(CDolphinApp, CWinApp)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
 
 
-// CRhinoApp 构造
+// CDolphinApp 构造
 
-CRhinoApp::CRhinoApp()
+CDolphinApp::CDolphinApp()
 {
 	// 支持重新启动管理器
 	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
@@ -30,14 +30,14 @@ CRhinoApp::CRhinoApp()
 }
 
 
-// 唯一的一个 CRhinoApp 对象
+// 唯一的一个 CDolphinApp 对象
 
-CRhinoApp theApp;
+CDolphinApp theApp;
 
 
-// CRhinoApp 初始化
+// CDolphinApp 初始化
 
-BOOL CRhinoApp::InitInstance()
+BOOL CDolphinApp::InitInstance()
 {
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
@@ -72,7 +72,7 @@ BOOL CRhinoApp::InitInstance()
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 
-	CRhinoDlg dlg;
+	CDolphinDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)

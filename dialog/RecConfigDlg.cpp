@@ -1,9 +1,9 @@
-// F:\Workspace\MediaStudio\Rhino\dialog\RecConfigDlg.cpp : 实现文件
+// F:\Workspace\MediaStudio\Dolphin\dialog\RecConfigDlg.cpp : 实现文件
 //
 
 #include "stdafx.h"
 #include "../Config.h"
-#include "../Rhino.h"
+#include "../Dolphin.h"
 #include "RecConfigDlg.h"
 #include "afxdialogex.h"
 

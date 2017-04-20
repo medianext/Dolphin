@@ -1,10 +1,10 @@
 
-// RhinoDlg.cpp : 实现文件
+// DolphinDlg.cpp : 实现文件
 //
 
 #include "stdafx.h"
-#include "Rhino.h"
-#include "RhinoDlg.h"
+#include "Dolphin.h"
+#include "DolphinDlg.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -30,12 +30,12 @@
 LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam);
 
 
-// CRhinoDlg 对话框
+// CDolphinDlg 对话框
 
 
 
-CRhinoDlg::CRhinoDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_RHINO_DIALOG, pParent)
+CDolphinDlg::CDolphinDlg(CWnd* pParent /*=NULL*/)
+	: CDialogEx(IDD_DOLPHIN_DIALOG, pParent)
     , m_RecordStatus(0)
     , m_dwStartTime(0)
     , m_dwPauseTime(0)
@@ -44,35 +44,35 @@ CRhinoDlg::CRhinoDlg(CWnd* pParent /*=NULL*/)
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
-void CRhinoDlg::DoDataExchange(CDataExchange* pDX)
+void CDolphinDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BEGIN_MESSAGE_MAP(CRhinoDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CDolphinDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_CLOSE()
 	ON_WM_DESTROY()
 	ON_WM_TIMER()
-	ON_BN_CLICKED(IDC_BTN_CONFIG, &CRhinoDlg::OnShowConfigDlg)
-    ON_BN_CLICKED(IDC_BTN_RECORD, &CRhinoDlg::OnStartRecord)
-    ON_BN_CLICKED(IDC_BTN_PAUSE, &CRhinoDlg::OnPauseRecord)
-	ON_BN_CLICKED(IDC_BTN_STOP, &CRhinoDlg::OnStopRecord)
+	ON_BN_CLICKED(IDC_BTN_CONFIG, &CDolphinDlg::OnShowConfigDlg)
+    ON_BN_CLICKED(IDC_BTN_RECORD, &CDolphinDlg::OnStartRecord)
+    ON_BN_CLICKED(IDC_BTN_PAUSE, &CDolphinDlg::OnPauseRecord)
+	ON_BN_CLICKED(IDC_BTN_STOP, &CDolphinDlg::OnStopRecord)
 	ON_MESSAGE(WM_NOTYFICATION_MESSAGE, OnNotifyMsg)
 	ON_WM_HOTKEY()
-	ON_COMMAND(WM_SHOW_MAIN_DLG, &CRhinoDlg::OnShowMainDlg)
-	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CRhinoDlg::OnShowConfigDlg)
-	ON_COMMAND(WM_SHOW_ABOUT_DLG, &CRhinoDlg::OnShowAboutDlg)
-	ON_COMMAND(WM_STARTRECORD, &CRhinoDlg::OnStartRecord)
-	ON_COMMAND(WM_PAUSERECORD, &CRhinoDlg::OnPauseRecord)
-	ON_COMMAND(WM_STOPRECORD, &CRhinoDlg::OnStopRecord)
+	ON_COMMAND(WM_SHOW_MAIN_DLG, &CDolphinDlg::OnShowMainDlg)
+	ON_COMMAND(WM_SHOW_CONFIG_DLG, &CDolphinDlg::OnShowConfigDlg)
+	ON_COMMAND(WM_SHOW_ABOUT_DLG, &CDolphinDlg::OnShowAboutDlg)
+	ON_COMMAND(WM_STARTRECORD, &CDolphinDlg::OnStartRecord)
+	ON_COMMAND(WM_PAUSERECORD, &CDolphinDlg::OnPauseRecord)
+	ON_COMMAND(WM_STOPRECORD, &CDolphinDlg::OnStopRecord)
 END_MESSAGE_MAP()
 
 
-// CRhinoDlg 消息处理程序
+// CDolphinDlg 消息处理程序
 
-BOOL CRhinoDlg::OnInitDialog()
+BOOL CDolphinDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
@@ -109,7 +109,7 @@ BOOL CRhinoDlg::OnInitDialog()
 	m_NotifyIcon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 	m_NotifyIcon.uCallbackMessage = WM_USER + 1000;
 	m_NotifyIcon.hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));
-	lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder"));//图标提示为"测试程序"
+	lstrcpy(m_NotifyIcon.szTip, TEXT("Dolphin Screen Recorder"));//图标提示为"测试程序"
 	ret = Shell_NotifyIcon(NIM_ADD, &m_NotifyIcon);//向任务栏添加图标
 
 	//Initialize NotifyMenu
@@ -143,7 +143,7 @@ BOOL CRhinoDlg::OnInitDialog()
 //  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
 //  这将由框架自动完成。
 
-void CRhinoDlg::OnPaint()
+void CDolphinDlg::OnPaint()
 {
 	if (IsIconic())
 	{
@@ -170,14 +170,14 @@ void CRhinoDlg::OnPaint()
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
 //显示。
-HCURSOR CRhinoDlg::OnQueryDragIcon()
+HCURSOR CDolphinDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
 
 
-void CRhinoDlg::OnClose()
+void CDolphinDlg::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
@@ -200,7 +200,7 @@ void CRhinoDlg::OnClose()
 }
 
 
-void CRhinoDlg::OnDestroy()
+void CDolphinDlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
 
@@ -224,7 +224,7 @@ void CRhinoDlg::OnDestroy()
 }
 
 
-void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
+void CDolphinDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
     if (nIDEvent == TIMER_RECORDER)
@@ -262,7 +262,7 @@ void CRhinoDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 }
 
-LRESULT  CRhinoDlg::OnNotifyMsg(WPARAM wparam, LPARAM lparam)
+LRESULT  CDolphinDlg::OnNotifyMsg(WPARAM wparam, LPARAM lparam)
 //wParam接收的是图标的ID，而lParam接收的是鼠标的行为     
 {
 	if (wparam != IDR_MAINFRAME)
@@ -286,7 +286,7 @@ LRESULT  CRhinoDlg::OnNotifyMsg(WPARAM wparam, LPARAM lparam)
 	return 0;
 }
 
-void CRhinoDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
+void CDolphinDlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
@@ -351,50 +351,50 @@ LRESULT CALLBACK NotifyHookProc(int code, WPARAM wParam, LPARAM lParam)
 }
 
 
-void CRhinoDlg::OnShowMainDlg()
+void CDolphinDlg::OnShowMainDlg()
 {
 	this->ShowWindow(SW_SHOW);
 }
 
 
-void CRhinoDlg::OnShowConfigDlg()
+void CDolphinDlg::OnShowConfigDlg()
 {
 	m_configDlg.ShowWindow(SW_SHOW);
 }
 
 
-void CRhinoDlg::OnShowAboutDlg()
+void CDolphinDlg::OnShowAboutDlg()
 {
     m_configDlg.ShowAboutTab();
 }
 
 
-void CRhinoDlg::OnShowCameraDlg()
+void CDolphinDlg::OnShowCameraDlg()
 {
 	m_renderDlg.ShowWindow(SW_SHOW);
     cameraCapture->Start();
 }
 
 
-void CRhinoDlg::OnStartRecord()
+void CDolphinDlg::OnStartRecord()
 {
 	StartRecord();
 }
 
 
-void CRhinoDlg::OnPauseRecord()
+void CDolphinDlg::OnPauseRecord()
 {
 	PauseRecord();
 }
 
 
-void CRhinoDlg::OnStopRecord()
+void CDolphinDlg::OnStopRecord()
 {
     StopRecord();
 }
 
 
-void CRhinoDlg::StartRecord()
+void CDolphinDlg::StartRecord()
 {
     if (m_RecordStatus == 2)
     {
@@ -429,7 +429,7 @@ void CRhinoDlg::StartRecord()
     m_RecordStatus = 2;
 
     m_NotifyIcon.uFlags = NIF_TIP;
-    lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n正在录像"));//
+    lstrcpy(m_NotifyIcon.szTip, TEXT("Dolphin Screen Recorder\n正在录像"));//
     Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
 
     CodecConfig codecConfig;
@@ -466,7 +466,7 @@ void CRhinoDlg::StartRecord()
 }
 
 
-void CRhinoDlg::PauseRecord()
+void CDolphinDlg::PauseRecord()
 {
     CWnd* pChild = NULL;
 
@@ -479,7 +479,7 @@ void CRhinoDlg::PauseRecord()
         pChild->ShowWindow(SW_HIDE);
 
         m_NotifyIcon.uFlags = NIF_TIP;
-        lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder\n录像暂停"));//图标提示为"测试程序"
+        lstrcpy(m_NotifyIcon.szTip, TEXT("Dolphin Screen Recorder\n录像暂停"));//图标提示为"测试程序"
         Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
 
         m_dwPauseTime = time(NULL);
@@ -488,7 +488,7 @@ void CRhinoDlg::PauseRecord()
 }
 
 
-void CRhinoDlg::StopRecord()
+void CDolphinDlg::StopRecord()
 {
     if (m_RecordStatus!=0)
     {
@@ -514,7 +514,7 @@ void CRhinoDlg::StopRecord()
         pChild->SetWindowText(TEXT("00:00:00"));
 
         m_NotifyIcon.uFlags = NIF_TIP;
-        lstrcpy(m_NotifyIcon.szTip, TEXT("Rhino Screen Recorder"));//图标提示为"测试程序"
+        lstrcpy(m_NotifyIcon.szTip, TEXT("Dolphin Screen Recorder"));//图标提示为"测试程序"
         Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIcon);//向任务栏添加图标
     }
 }

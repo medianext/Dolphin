@@ -1,5 +1,5 @@
 
-// RhinoDlg.h : 头文件
+// DolphinDlg.h : 头文件
 //
 
 #pragma once
@@ -7,17 +7,17 @@
 #include "dialog/ConfigDlg.h"
 #include "dialog/RenderDlg.h"
 
-// CRhinoDlg 对话框
+// CDolphinDlg 对话框
 
-class CRhinoDlg : public CDialogEx
+class CDolphinDlg : public CDialogEx
 {
 // 构造
 public:
-	CRhinoDlg(CWnd* pParent = NULL);	// 标准构造函数
+	CDolphinDlg(CWnd* pParent = NULL);	// 标准构造函数
 
 // 对话框数据
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_RHINO_DIALOG };
+	enum { IDD = IDD_DOLPHIN_DIALOG };
 #endif
 
 	protected:
