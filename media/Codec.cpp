@@ -928,7 +928,7 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 
             pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
             pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
-			pkt.stream_index = stream_index;
+            pkt.stream_index = stream_index;
 			ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
             if (ret < 0)
             {
@@ -1202,7 +1202,7 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
             pkt.data = NULL;    // packet data will be allocated by the encoder
             pkt.size = 0;
 
-            int get_stream;
+            int get_stream = 0;
             int ret = avcodec_encode_audio2(codec->m_pAudioEncoder, &pkt, pcm, &get_stream);
             if (ret < 0)
             {
@@ -1223,10 +1223,10 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 pkt.pts -= codec->m_uStartTimestamp;
                 pkt.dts -= codec->m_uStartTimestamp;
 
-                pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
-                pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
+                pkt.pts = av_rescale_q(pkt.pts, codec->m_pAudioEncoder->time_base, st->time_base);
+                pkt.dts = av_rescale_q(pkt.dts, codec->m_pAudioEncoder->time_base, st->time_base);
                 pkt.stream_index = stream_index;
-                //ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
+                ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
                 if (ret < 0)
                 {
                     OutputDebugString(TEXT("write audio packet failed!\n"));
