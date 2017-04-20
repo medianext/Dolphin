@@ -299,6 +299,7 @@ DWORD WINAPI SpeakerCapture::CaptureSpeakerThread(LPVOID lpParam)
             pFrame->CopyFrom(tmpBuf, frameSize);
             tmpSize = dataSize - copiedSize;
             memcpy(tmpBuf, &pData[copiedSize], tmpSize);
+            pFrame->m_uTimestamp = GetTickCount() * 1000;
             getFrame = true;
         }
         else

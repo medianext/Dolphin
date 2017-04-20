@@ -150,6 +150,7 @@ private:
     AVCodecContext*          m_pAudioEncoder = NULL;
     AVCodecContext*          m_pVideoEncoder = NULL;
 	AVFormatContext*         m_pFormatCtx = NULL;
+    uint64_t                 m_uStartTimestamp;
 #else
     HANDLE_AACENCODER        m_audioEncoder = NULL;
     x264_t*                  m_videoEncoder = NULL;

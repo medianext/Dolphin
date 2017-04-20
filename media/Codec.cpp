@@ -9,7 +9,7 @@
 
 
 #define REC_CODEC_RAW              0
-#define REC_CODEC_STREAM           1
+#define REC_CODEC_STREAM           0
 
 
 #define COLOR_CONVERT_USE_TABLE    1
@@ -439,14 +439,21 @@ int Codec::ConfigVideoCodec()
 
     m_pVideoEncoder = avcodec_alloc_context3(codec);
 
+    m_pVideoEncoder->pix_fmt = AV_PIX_FMT_YUV420P;
     m_pVideoEncoder->width = m_videoAttribute.width;
     m_pVideoEncoder->height = m_videoAttribute.height;
     m_pVideoEncoder->gop_size = m_videoAttribute.fps;
-	m_pVideoEncoder->bit_rate = m_videoAttribute.bitrate*1000;
     m_pVideoEncoder->max_b_frames = 0;
-    m_pVideoEncoder->pix_fmt = AV_PIX_FMT_YUV420P;
     m_pVideoEncoder->time_base = { 1, 1000000 };
-    av_opt_set(m_pVideoEncoder->priv_data, "preset", "slow", 0);
+    m_pVideoEncoder->bit_rate = m_videoAttribute.bitrate * 1000;
+    m_pVideoEncoder->rc_max_rate = m_pVideoEncoder->bit_rate;
+    m_pVideoEncoder->rc_min_rate = m_pVideoEncoder->bit_rate;
+    m_pVideoEncoder->bit_rate_tolerance = m_pVideoEncoder->bit_rate;
+    m_pVideoEncoder->rc_buffer_size = m_pVideoEncoder->bit_rate;
+    m_pVideoEncoder->rc_initial_buffer_occupancy = m_pVideoEncoder->rc_buffer_size * 3 / 4;
+    m_pVideoEncoder->rc_buffer_aggressivity = (float)1.0;
+    m_pVideoEncoder->rc_initial_cplx = 0.5;
+    av_opt_set(m_pVideoEncoder->priv_data, "preset", "veryfast", 0);
 
     ret = avcodec_open2(m_pVideoEncoder, codec, NULL);
     if (ret < 0)
@@ -793,9 +800,13 @@ int Codec::InitMuxer()
 
 	ret = avformat_alloc_output_context2(&m_pFormatCtx, NULL, NULL, filename);
 
-	//a_st = avformat_new_stream(m_pFormatCtx, m_pAudioEncoder->codec);
-	v_st = avformat_new_stream(m_pFormatCtx, m_pVideoEncoder->codec);
-	v_st->time_base = m_pVideoEncoder->time_base;
+    a_st = avformat_new_stream(m_pFormatCtx, m_pAudioEncoder->codec);
+    ret = avcodec_copy_context(a_st->codec, m_pAudioEncoder);
+    a_st->time_base = { 1, 1000000 };
+
+    v_st = avformat_new_stream(m_pFormatCtx, m_pVideoEncoder->codec);
+    ret = avcodec_copy_context(v_st->codec, m_pVideoEncoder);
+    v_st->time_base = {1, 1000000};
 
 	ret = avio_open(&m_pFormatCtx->pb, filename, AVIO_FLAG_WRITE);
 
@@ -809,9 +820,13 @@ int Codec::InitMuxer()
 int Codec::UninitMuxer()
 {
 #if USE_FFMPEG
-	av_write_trailer(m_pFormatCtx);
-	avio_close(m_pFormatCtx->pb);
-	avformat_free_context(m_pFormatCtx);
+    if (m_pFormatCtx)
+    {
+        av_write_trailer(m_pFormatCtx);
+        avio_close(m_pFormatCtx->pb);
+        avformat_free_context(m_pFormatCtx);
+        m_pFormatCtx = NULL;
+    }
 #endif
 	return 0;
 }
@@ -837,7 +852,8 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
 #if USE_FFMPEG
     AVFrame* pic = av_frame_alloc();
     AVPacket pkt;
-	int stream_index = av_find_best_stream(codec->m_pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);;
+	int stream_index = av_find_best_stream(codec->m_pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+    AVStream* st = codec->m_pFormatCtx->streams[stream_index];
 #else
     x264_picture_t* pic = new x264_picture_t;
 #endif
@@ -845,6 +861,8 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
     {
         return -1;
     }
+
+    uint64_t timestamp = 0;
 
 	while (1)
 	{
@@ -901,8 +919,21 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
             }
             packet->m_uTimestamp = pkt.pts / 1000;
 
+            if (codec->m_uStartTimestamp == 0)
+            {
+                codec->m_uStartTimestamp = pkt.pts;
+            }
+            pkt.pts -= codec->m_uStartTimestamp;
+            pkt.dts -= codec->m_uStartTimestamp;
+
+            pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
+            pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
 			pkt.stream_index = stream_index;
-			ret = av_write_frame(codec->m_pFormatCtx, &pkt);
+			ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
+            if (ret < 0)
+            {
+                OutputDebugString(TEXT("write video packet failed!\n"));
+            }
         }
 #else
         x264_picture_init(pic);
@@ -953,6 +984,9 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
             codec->m_videoDecCnt++;
             //codec->PushVideoPacket(packet);
             delete packet;
+#if USE_FFMPEG
+            av_free_packet(&pkt);
+#endif
         }
 		delete frame;
 
@@ -967,6 +1001,49 @@ DWORD WINAPI Codec::VideoEncodecThread(LPVOID lpParam)
         }
     }
 #if USE_FFMPEG
+    while (1)
+    {
+        int get_packet = 0;
+        int ret = avcodec_encode_video2(codec->m_pVideoEncoder, &pkt, NULL, &get_packet);
+        if (ret < 0 || get_packet==0)
+        {
+            break;
+        }
+        MediaPacket *packet = new MediaPacket(PACKET_TYPE_VIDEO, pkt.size);
+        memcpy(packet->m_pData, pkt.data, pkt.size);
+
+        if (pkt.flags | AV_PKT_FLAG_KEY)
+        {
+            packet->m_bKeyframe = true;
+        }
+        packet->m_uTimestamp = pkt.pts / 1000;
+
+        if (codec->m_uStartTimestamp == 0)
+        {
+            codec->m_uStartTimestamp = pkt.pts;
+        }
+        pkt.pts -= codec->m_uStartTimestamp;
+        pkt.dts -= codec->m_uStartTimestamp;
+
+        pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
+        pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
+        pkt.stream_index = stream_index;
+        ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
+        if (ret < 0)
+        {
+            OutputDebugString(TEXT("write video packet failed!\n"));
+        }
+#if REC_CODEC_STREAM
+            if (h264file.is_open())
+            {
+                h264file.write((char *)packet->m_pData, packet->m_dataSize);
+            }
+#endif
+        codec->m_videoDecCnt++;
+        //codec->PushVideoPacket(packet);
+        delete packet;
+        av_free_packet(&pkt);
+    }
     av_frame_free(&pic);
 #else
     delete pic;
@@ -1020,6 +1097,8 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
         pcm->data[0] = (unsigned char*)pinbuf;
         pcm->data[1] = (unsigned char*)pinbuf + in_size;
     }
+    int stream_index = av_find_best_stream(codec->m_pFormatCtx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
+    AVStream* st = codec->m_pFormatCtx->streams[stream_index];
 #else
     AACENC_InfoStruct info = { 0 };
     if (aacEncInfo(codec->m_audioEncoder, &info) != AACENC_OK) {
@@ -1116,6 +1195,7 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
                 memcpy(&pcm->data[1][in_cursize], &(frame->m_pData + frame->m_dataSize / 2)[frame->m_dataSize/2 - pframeleft], in_size - in_cursize);
                 pframeleft -= in_size - in_cursize;
                 in_cursize = 0;
+                pcm->pts = frame->m_uTimestamp;
             }
 
             av_init_packet(&pkt);
@@ -1135,6 +1215,22 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
             {
                 size = pkt.size;
                 pktbuf = pkt.data;
+
+                if (codec->m_uStartTimestamp == 0)
+                {
+                    codec->m_uStartTimestamp = pkt.pts;
+                }
+                pkt.pts -= codec->m_uStartTimestamp;
+                pkt.dts -= codec->m_uStartTimestamp;
+
+                pkt.pts = av_rescale_q(pkt.pts, codec->m_pVideoEncoder->time_base, st->time_base);
+                pkt.dts = av_rescale_q(pkt.dts, codec->m_pVideoEncoder->time_base, st->time_base);
+                pkt.stream_index = stream_index;
+                ret = av_interleaved_write_frame(codec->m_pFormatCtx, &pkt);
+                if (ret < 0)
+                {
+                    OutputDebugString(TEXT("write audio packet failed!\n"));
+                }
             }
 #else
             if (pframeleft < in_size - in_cursize)
@@ -1160,14 +1256,6 @@ DWORD WINAPI Codec::AudioEncodecThread(LPVOID lpParam)
             int size = out_args.numOutBytes;
             void* pktbuf = outbuf.bufs[0];
 #endif
-            if (timestamp == 0)
-            {
-                timestamp = frame->m_uTimestamp;
-            }
-            else
-            {
-                timestamp += 1024 * 1000 * 1000 / attr.samplerate;
-            }
             if (size)
             {
                 MediaPacket* packet = new MediaPacket(PACKET_TYPE_AUDIO, size);
@@ -1377,6 +1465,7 @@ int Codec::Start()
 	InitCodec();
 	InitMuxer();
 	m_QuitCmd = 0;
+    m_uStartTimestamp = 0;
     m_videoThread = CreateThread(NULL, 0, VideoEncodecThread, this, 0, NULL);
     m_audioThread = CreateThread(NULL, 0, AudioEncodecThread, this, 0, NULL);
     m_Status = CODEC_STATUS_START;
